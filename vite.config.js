@@ -36,6 +36,13 @@ if (host === "localhost") {
 }
 
 export default defineConfig({
+  resolve: {
+    alias: {
+      // React Router v7 merged react-router-dom into react-router
+      // This alias ensures any legacy imports are redirected properly
+      "react-router-dom": "react-router",
+    },
+  },
   server: {
     allowedHosts: [host],
     cors: {
