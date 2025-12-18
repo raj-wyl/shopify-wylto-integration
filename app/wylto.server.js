@@ -241,7 +241,7 @@ function validateTemplateData(templateKey, data = {}) {
  * @returns {string} Rendered message text
  * @throws {Error} If template not found or required fields missing
  */
-function renderTemplate(templateKey, data = {}) {
+export function renderTemplate(templateKey, data = {}) {
   // Step 1: Look up template
   const template = TEMPLATES[templateKey];
   if (!template) {
