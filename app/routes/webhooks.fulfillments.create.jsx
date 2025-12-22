@@ -1,5 +1,6 @@
 import { authenticate } from "../shopify.server";
 import db from "../db.server";
+import { sendWhatsAppMessage } from "../wylto.server";
 
 export const action = async ({ request }) => {
   const { shop, topic, payload } = await authenticate.webhook(request);
@@ -17,13 +18,63 @@ export const action = async ({ request }) => {
       },
     });
 
-    // TODO: Process fulfillment and send shipping notification via Wylto
-    // 1. Extract tracking number, carrier, customer phone
-    // 2. Get store's Wylto API key from db.store
-    // 3. Send WhatsApp shipping notification via Wylto API
-    // 4. Log message in db.messageLog
-
+    // Process fulfillment and send shipping notification via Wylto
     console.log(`Fulfillment created: ${payload.id} for ${shop}`);
+
+    // Extract fulfillment details from payload
+    const orderId = payload.order_id?.toString();
+    const trackingNumber = payload.tracking_number || payload.tracking_numbers?.[0];
+    const carrier = payload.tracking_company || payload.tracking_company_name;
+
+    // Get order details to find customer phone
+    // Note: Fulfillment payload may not include customer phone directly
+    // We'll need to fetch order or use order_id as reference
+    if (orderId) {
+      try {
+        // Extract customer info from fulfillment payload if available
+        const customerPhone =
+          payload.order?.customer?.phone ||
+          payload.order?.billing_address?.phone ||
+          payload.order?.shipping_address?.phone;
+
+        if (customerPhone) {
+          const orderNumber =
+            payload.order?.name ||
+            payload.order?.order_number ||
+            `#${orderId}`;
+          const customerName =
+            payload.order?.customer?.first_name ||
+            payload.order?.billing_address?.first_name ||
+            "Customer";
+
+          // Send WhatsApp message using ORDER_FULFILLED template
+          await sendWhatsAppMessage({
+            shopDomain: shop,
+            templateKey: "ORDER_FULFILLED",
+            to: customerPhone,
+            data: {
+              customerName,
+              orderNumber,
+              trackingNumber,
+              carrier,
+            },
+            referenceId: orderId,
+          });
+
+          console.log(
+            `WhatsApp fulfillment message sent for order ${orderNumber} to ${customerPhone}`
+          );
+        } else {
+          console.log(
+            `Fulfillment ${payload.id} has no customer phone number, skipping WhatsApp message`
+          );
+        }
+      } catch (error) {
+        // Log error but don't fail the webhook
+        console.error(`Failed to send WhatsApp fulfillment message:`, error);
+        // Error is already logged in MessageLog by sendWhatsAppMessage
+      }
+    }
 
     // Update webhook log status
     await db.webhookLog.updateMany({

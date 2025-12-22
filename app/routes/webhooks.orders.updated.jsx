@@ -1,5 +1,6 @@
 import { authenticate } from "../shopify.server";
 import db from "../db.server";
+import { sendWhatsAppMessage } from "../wylto.server";
 
 export const action = async ({ request }) => {
   const { shop, topic, payload } = await authenticate.webhook(request);
@@ -17,13 +18,78 @@ export const action = async ({ request }) => {
       },
     });
 
-    // TODO: Process order update and send WhatsApp notification via Wylto
-    // 1. Check if order status changed (e.g., cancelled, refunded)
-    // 2. Get store's Wylto API key from db.store
-    // 3. Send WhatsApp update via Wylto API
-    // 4. Log message in db.messageLog
-
+    // Process order update and send WhatsApp notification via Wylto
     console.log(`Order updated: ${payload.id} for ${shop}`);
+
+    // Extract order details from payload
+    const customerPhone =
+      payload.customer?.phone ||
+      payload.billing_address?.phone ||
+      payload.shipping_address?.phone;
+
+    // Only send WhatsApp if customer has a phone number
+    if (customerPhone) {
+      try {
+        const orderNumber = payload.name || payload.order_number || `#${payload.id}`;
+        const customerName =
+          payload.customer?.first_name ||
+          payload.billing_address?.first_name ||
+          "Customer";
+        const shopName = shop.replace(".myshopify.com", "");
+        const orderStatus = payload.financial_status || payload.fulfillment_status || "updated";
+        const isCancelled =
+          payload.cancelled_at !== null ||
+          payload.financial_status === "refunded" ||
+          payload.financial_status === "voided";
+
+        // Check if order was cancelled
+        if (isCancelled) {
+          const refundAmount = payload.total_refunded || payload.refunds?.[0]?.amount;
+          const currency = payload.currency || "USD";
+
+          await sendWhatsAppMessage({
+            shopDomain: shop,
+            templateKey: "ORDER_CANCELLED",
+            to: customerPhone,
+            data: {
+              customerName,
+              orderNumber,
+              shopName,
+              refundAmount: refundAmount ? refundAmount.toString() : undefined,
+              currency,
+            },
+            referenceId: payload.id?.toString(),
+          });
+
+          console.log(
+            `WhatsApp cancellation message sent for order ${orderNumber} to ${customerPhone}`
+          );
+        } else {
+          // Send general order update message
+          await sendWhatsAppMessage({
+            shopDomain: shop,
+            templateKey: "ORDER_UPDATED",
+            to: customerPhone,
+            data: {
+              customerName,
+              orderNumber,
+              orderStatus,
+            },
+            referenceId: payload.id?.toString(),
+          });
+
+          console.log(
+            `WhatsApp update message sent for order ${orderNumber} to ${customerPhone}`
+          );
+        }
+      } catch (error) {
+        // Log error but don't fail the webhook
+        console.error(`Failed to send WhatsApp update message for order ${payload.id}:`, error);
+        // Error is already logged in MessageLog by sendWhatsAppMessage
+      }
+    } else {
+      console.log(`Order ${payload.id} has no customer phone number, skipping WhatsApp message`);
+    }
 
     // Update webhook log status
     await db.webhookLog.updateMany({
