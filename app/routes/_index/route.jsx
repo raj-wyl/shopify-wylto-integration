@@ -1,421 +1,451 @@
-import { redirect, Form, useLoaderData } from "react-router";
-import { login } from "../../shopify.server";
+import { redirect } from "react-router";
+import { useState, useEffect } from "react";
+import { useLoaderData, useFetcher } from "react-router";
+import { authenticate } from "../../shopify.server";
+import { getStoreByShopDomain, updateStoreConfig } from "../../store.server";
+
+/**
+ * Landing page - Wylto Account Connection
+ * 
+ * This page appears after users install the app from the Shopify App Store.
+ * It allows users to connect their existing Wylto account or learn about getting one.
+ */
 
 export const loader = async ({ request }) => {
   const url = new URL(request.url);
 
+  // If shop parameter exists, redirect to app (OAuth flow)
   if (url.searchParams.get("shop")) {
     throw redirect(`/app?${url.searchParams.toString()}`);
   }
 
-  return { showForm: Boolean(login) };
+  // Try to authenticate - if not authenticated, redirect to login
+  try {
+    const { session } = await authenticate.admin(request);
+    const shopDomain = session.shop;
+
+    // Load current Store configuration
+    const store = await getStoreByShopDomain(shopDomain);
+
+    return {
+      shopDomain,
+      hasApiKey: !!store?.wyltoApiKey,
+      hasAccountId: !!store?.wyltoAccountId,
+      isConfigured: !!(store?.wyltoApiKey && store?.wyltoAccountId && store?.isActive),
+    };
+  } catch (error) {
+    // Not authenticated - redirect to login
+    throw redirect("/auth/login");
+  }
 };
 
-export default function App() {
-  const { showForm } = useLoaderData();
+export const action = async ({ request }) => {
+  const { session } = await authenticate.admin(request);
+  const shopDomain = session.shop;
+
+  const formData = await request.formData();
+  const wyltoApiKey = formData.get("wyltoApiKey")?.toString().trim() || "";
+  const wyltoAccountId = formData.get("wyltoAccountId")?.toString().trim() || "";
+  const actionType = formData.get("actionType")?.toString() || "";
+
+  // Test connection action
+  if (actionType === "test") {
+    if (!wyltoApiKey) {
+      return {
+        success: false,
+        error: "Please enter your Wylto API key to test the connection.",
+      };
+    }
+    // TODO: Add actual API test call here
+    return {
+      success: true,
+      message: "Connection test successful!",
+    };
+  }
+
+  // Save connection action
+  if (actionType === "save") {
+    if (!wyltoApiKey || !wyltoAccountId) {
+      return {
+        success: false,
+        error: "Both API Key and Account ID are required.",
+      };
+    }
+
+    try {
+      await updateStoreConfig(shopDomain, {
+        wyltoApiKey,
+        wyltoAccountId,
+        isActive: true,
+      });
+
+      return {
+        success: true,
+        message: "Wylto account connected successfully!",
+        redirect: "/app",
+      };
+    } catch (error) {
+      return {
+        success: false,
+        error: error.message || "Failed to connect Wylto account.",
+      };
+    }
+  }
+
+  return {
+    success: false,
+    error: "Invalid action.",
+  };
+};
+
+export default function WyltoConnection() {
+  const loaderData = useLoaderData();
+  const fetcher = useFetcher();
+  const [wyltoApiKey, setWyltoApiKey] = useState("");
+  const [wyltoAccountId, setWyltoAccountId] = useState("");
+  const [showAccountId, setShowAccountId] = useState(false);
+  const [actionType, setActionType] = useState("");
+
+  const actionData = fetcher.data;
+  const isLoading = fetcher.state === "submitting";
+
+  // Handle redirect after successful connection
+  useEffect(() => {
+    if (actionData?.success && actionData?.redirect) {
+      window.location.href = actionData.redirect;
+    }
+  }, [actionData]);
+
+  const handleSubmit = (e, type) => {
+    e.preventDefault();
+    setActionType(type);
+    const formData = new FormData();
+    formData.append("wyltoApiKey", wyltoApiKey);
+    formData.append("wyltoAccountId", wyltoAccountId);
+    formData.append("actionType", type);
+    fetcher.submit(formData, { method: "POST" });
+  };
 
   return (
-    <div style={{
-      minHeight: "100vh",
-      width: "100%",
-      background: "linear-gradient(135deg, #f0fdf4 0%, #ffffff 30%, #fff7ed 100%)",
-      padding: "2rem 1rem",
-      display: "flex",
-      alignItems: "center",
-      justifyContent: "center",
-      fontFamily: "-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif"
-    }}>
+    <>
+      <style>{`
+        * {
+          box-sizing: border-box;
+        }
+        body {
+          margin: 0;
+          padding: 0;
+          font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+          background: #ffffff;
+        }
+      `}</style>
       <div style={{
-        maxWidth: "1200px",
+        minHeight: "100vh",
         width: "100%",
         background: "#ffffff",
-        borderRadius: "20px",
-        boxShadow: "0 20px 60px rgba(22, 160, 133, 0.15), 0 0 0 1px rgba(22, 160, 133, 0.1)",
-        padding: "0",
-        overflow: "hidden"
+        padding: "3rem 1.5rem",
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "center"
       }}>
-        {/* Hero Section */}
         <div style={{
-          background: "#f8fafc",
-          padding: "4rem 2rem",
-          textAlign: "center",
-          color: "#1f2937",
-          position: "relative",
-          overflow: "hidden",
-          borderBottom: "1px solid #e5e7eb"
+          maxWidth: "600px",
+          width: "100%",
+          display: "flex",
+          flexDirection: "column",
+          gap: "3rem"
         }}>
+          {/* Top Section: Connect Your Wylto Account */}
           <div style={{
-            position: "absolute",
-            top: "-50px",
-            right: "-50px",
-            width: "200px",
-            height: "200px",
-            background: "rgba(22, 160, 133, 0.05)",
-            borderRadius: "50%"
-          }}></div>
-          <div style={{
-            position: "absolute",
-            bottom: "-30px",
-            left: "-30px",
-            width: "150px",
-            height: "150px",
-            background: "rgba(22, 160, 133, 0.03)",
-            borderRadius: "50%"
-          }}></div>
-          
-          {/* Wylto Logo */}
-          <div style={{
-            marginBottom: "2rem",
-            position: "relative",
-            zIndex: 1
-          }}>
-            <div style={{
-              display: "inline-flex",
-              alignItems: "center",
-              gap: "1rem",
-              background: "white",
-              padding: "1rem 2rem",
-              borderRadius: "16px",
-              boxShadow: "0 4px 12px rgba(0, 0, 0, 0.08)",
-              border: "1px solid #e5e7eb"
-            }}>
-              <img 
-                src="https://cdn.cmsfly.com/6469b4cdc6475c01091b3091/logov2-WMv8SE.png" 
-                alt="Wylto Logo"
-                style={{
-                  height: "48px",
-                  width: "auto",
-                  objectFit: "contain"
-                }}
-              />
-            </div>
-          </div>
-          
-          <div style={{
-            fontSize: "4rem",
-            marginBottom: "1.5rem",
-            filter: "drop-shadow(0 4px 12px rgba(22, 160, 133, 0.2))",
-            animation: "pulse 2s ease-in-out infinite",
-            position: "relative",
-            zIndex: 1
-          }}>💬</div>
-          
-          <h1 style={{
-            fontSize: "3rem",
-            fontWeight: "800",
-            margin: "0 0 1.25rem 0",
-            color: "#1f2937",
-            position: "relative",
-            zIndex: 1,
-            lineHeight: "1.2"
-          }}>WhatsApp Integration for Shopify</h1>
-          
-          <p style={{
-            fontSize: "1.25rem",
-            margin: "0",
-            color: "#6b7280",
-            maxWidth: "700px",
-            marginLeft: "auto",
-            marginRight: "auto",
-            lineHeight: "1.7",
-            position: "relative",
-            zIndex: 1,
-            paddingTop: "0.5rem"
-          }}>
-            Connect your Shopify store with WhatsApp. Send automated order confirmations, 
-            shipping updates, and cart recovery messages directly to your customers.
-          </p>
-          
-          {/* Trust Badge */}
-          <div style={{
-            marginTop: "2.5rem",
             display: "flex",
-            alignItems: "center",
-            justifyContent: "center",
-            gap: "0.5rem",
-            fontSize: "0.9rem",
-            color: "#6b7280",
-            position: "relative",
-            zIndex: 1
+            flexDirection: "column",
+            gap: "1.5rem"
           }}>
-            <svg width="20" height="20" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
-              <path d="M10 2L12.09 7.26L18 8.27L14 12.14L14.91 18.02L10 15.77L5.09 18.02L6 12.14L2 8.27L7.91 7.26L10 2Z" fill="#16a085" opacity="0.8"/>
-            </svg>
-            <span>Powered by Wylto API • Secure & Reliable</span>
-          </div>
-        </div>
+            <h1 style={{
+              fontSize: "1.75rem",
+              fontWeight: "700",
+              color: "#1f2937",
+              margin: "0",
+              lineHeight: "1.3"
+            }}>
+              Connect Your Wylto Account
+            </h1>
 
-        {/* Login Section */}
-        {showForm && (
-          <div style={{
-            padding: "3rem 2rem",
-            background: "linear-gradient(135deg, #f0fdf4 0%, #ffffff 100%)"
-          }}>
-            <Form method="post" action="/auth/login" style={{
-              maxWidth: "600px",
-              margin: "0 auto"
+            <p style={{
+              fontSize: "1rem",
+              color: "#4b5563",
+              margin: "0",
+              lineHeight: "1.6"
+            }}>
+              Enter your Wylto API key to start automating WhatsApp messages for order confirmations, shipping updates, and cart recovery.
+            </p>
+
+            <div style={{
+              display: "flex",
+              flexDirection: "column",
+              gap: "1rem"
             }}>
               <div style={{
-                background: "white",
-                padding: "2rem",
-                borderRadius: "16px",
-                boxShadow: "0 8px 24px rgba(22, 160, 133, 0.15)",
-                    border: "2px solid #16a085"
+                display: "flex",
+                flexDirection: "column",
+                gap: "0.5rem"
               }}>
-                <label style={{
-                  display: "block",
-                  marginBottom: "1rem"
+                <label htmlFor="wyltoApiKey" style={{
+                  fontSize: "0.875rem",
+                  fontWeight: "600",
+                  color: "#1f2937"
                 }}>
-                  <span style={{
-                    display: "block",
-                    fontWeight: "600",
-                    color: "#1f2937",
-                    marginBottom: "0.5rem",
-                    fontSize: "1rem"
-                  }}>Enter your Shopify store domain</span>
-                  <input 
-                    type="text" 
-                    name="shop" 
-                    placeholder="your-store.myshopify.com"
-                    required
-                    style={{
-                      width: "100%",
-                      padding: "1rem",
-                      border: "2px solid #d1d5db",
-                      borderRadius: "10px",
-                      fontSize: "1rem",
-                      boxSizing: "border-box",
-                      transition: "all 0.3s ease"
-                    }}
-                    onFocus={(e) => {
-                      e.target.style.borderColor = "#16a085";
-                      e.target.style.boxShadow = "0 0 0 4px rgba(22, 160, 133, 0.1)";
-                    }}
-                    onBlur={(e) => {
-                      e.target.style.borderColor = "#d1d5db";
-                      e.target.style.boxShadow = "none";
-                    }}
-                  />
-                  <span style={{
-                    display: "block",
-                    fontSize: "0.875rem",
-                    color: "#6b7280",
-                    marginTop: "0.5rem"
-                  }}>e.g: my-shop-domain.myshopify.com</span>
+                  Wylto API Key
                 </label>
-                <button 
-                  type="submit"
+                <input
+                  id="wyltoApiKey"
+                  type="password"
+                  value={wyltoApiKey}
+                  onChange={(e) => setWyltoApiKey(e.target.value)}
+                  placeholder="Enter your API key"
+                  disabled={isLoading}
                   style={{
                     width: "100%",
-                    padding: "1rem 2rem",
-                    background: "linear-gradient(135deg, #16a085 0%, #138d75 100%)",
-                    color: "white",
-                    border: "none",
-                    borderRadius: "10px",
-                    fontSize: "1.1rem",
-                    fontWeight: "700",
-                    cursor: "pointer",
-                    boxShadow: "0 6px 20px rgba(22, 160, 133, 0.4)",
-                    transition: "all 0.3s ease",
-                    textTransform: "uppercase",
-                    letterSpacing: "0.5px"
+                    padding: "0.75rem 1rem",
+                    border: "1px solid #d1d5db",
+                    borderRadius: "8px",
+                    fontSize: "0.9375rem",
+                    color: "#1f2937",
+                    outline: "none",
+                    transition: "border-color 0.2s"
+                  }}
+                  onFocus={(e) => e.target.style.borderColor = "#16a085"}
+                  onBlur={(e) => e.target.style.borderColor = "#d1d5db"}
+                />
+                <p style={{
+                  fontSize: "0.875rem",
+                  color: "#6b7280",
+                  margin: "0",
+                  lineHeight: "1.5"
+                }}>
+                  Find this in your Wylto Dashboard → Settings → API Keys.
+                </p>
+              </div>
+
+              {showAccountId && (
+                <div style={{
+                  display: "flex",
+                  flexDirection: "column",
+                  gap: "0.5rem"
+                }}>
+                  <label htmlFor="wyltoAccountId" style={{
+                    fontSize: "0.875rem",
+                    fontWeight: "600",
+                    color: "#1f2937"
+                  }}>
+                    Wylto Account ID
+                  </label>
+                  <input
+                    id="wyltoAccountId"
+                    type="text"
+                    value={wyltoAccountId}
+                    onChange={(e) => setWyltoAccountId(e.target.value)}
+                    placeholder="Enter your Account ID"
+                    disabled={isLoading}
+                    style={{
+                      width: "100%",
+                      padding: "0.75rem 1rem",
+                      border: "1px solid #d1d5db",
+                      borderRadius: "8px",
+                      fontSize: "0.9375rem",
+                      color: "#1f2937",
+                      outline: "none",
+                      transition: "border-color 0.2s"
+                    }}
+                    onFocus={(e) => e.target.style.borderColor = "#16a085"}
+                    onBlur={(e) => e.target.style.borderColor = "#d1d5db"}
+                  />
+                </div>
+              )}
+
+              {actionData?.error && (
+                <div style={{
+                  padding: "0.75rem 1rem",
+                  background: "#fef2f2",
+                  border: "1px solid #fecaca",
+                  borderRadius: "8px",
+                  color: "#dc2626",
+                  fontSize: "0.875rem"
+                }}>
+                  {actionData.error}
+                </div>
+              )}
+
+              {actionData?.success && !actionData?.redirect && (
+                <div style={{
+                  padding: "0.75rem 1rem",
+                  background: "#f0fdf4",
+                  border: "1px solid #86efac",
+                  borderRadius: "8px",
+                  color: "#16a34a",
+                  fontSize: "0.875rem"
+                }}>
+                  {actionData.message}
+                </div>
+              )}
+
+              <div style={{
+                display: "flex",
+                gap: "0.75rem",
+                flexWrap: "wrap"
+              }}>
+                <button
+                  type="button"
+                  onClick={(e) => handleSubmit(e, "test")}
+                  disabled={isLoading || !wyltoApiKey}
+                  style={{
+                    padding: "0.75rem 1.5rem",
+                    background: "#ffffff",
+                    color: "#1f2937",
+                    border: "1px solid #d1d5db",
+                    borderRadius: "8px",
+                    fontSize: "0.9375rem",
+                    fontWeight: "500",
+                    cursor: isLoading ? "not-allowed" : "pointer",
+                    opacity: isLoading ? 0.6 : 1,
+                    transition: "all 0.2s",
+                    flex: "1",
+                    minWidth: "140px"
                   }}
                   onMouseEnter={(e) => {
-                    e.target.style.transform = "translateY(-2px)";
-                    e.target.style.boxShadow = "0 8px 24px rgba(22, 160, 133, 0.5)";
+                    if (!isLoading) {
+                      e.target.style.borderColor = "#9ca3af";
+                      e.target.style.background = "#f9fafb";
+                    }
                   }}
                   onMouseLeave={(e) => {
-                    e.target.style.transform = "translateY(0)";
-                    e.target.style.boxShadow = "0 6px 20px rgba(22, 160, 133, 0.4)";
+                    if (!isLoading) {
+                      e.target.style.borderColor = "#d1d5db";
+                      e.target.style.background = "#ffffff";
+                    }
                   }}
                 >
-                  Connect Store →
+                  {isLoading && actionType === "test" ? "Testing..." : "Test Connection"}
+                </button>
+                <button
+                  type="button"
+                  onClick={(e) => {
+                    if (!showAccountId) {
+                      setShowAccountId(true);
+                      setTimeout(() => {
+                        document.getElementById("wyltoAccountId")?.focus();
+                      }, 100);
+                    } else {
+                      handleSubmit(e, "save");
+                    }
+                  }}
+                  disabled={isLoading || !wyltoApiKey || (showAccountId && !wyltoAccountId)}
+                  style={{
+                    padding: "0.75rem 1.5rem",
+                    background: "#16a085",
+                    color: "#ffffff",
+                    border: "none",
+                    borderRadius: "8px",
+                    fontSize: "0.9375rem",
+                    fontWeight: "600",
+                    cursor: isLoading ? "not-allowed" : "pointer",
+                    opacity: isLoading ? 0.6 : 1,
+                    transition: "all 0.2s",
+                    flex: "1",
+                    minWidth: "140px"
+                  }}
+                  onMouseEnter={(e) => {
+                    if (!isLoading) {
+                      e.target.style.background = "#138d75";
+                    }
+                  }}
+                  onMouseLeave={(e) => {
+                    if (!isLoading) {
+                      e.target.style.background = "#16a085";
+                    }
+                  }}
+                >
+                  {isLoading && actionType === "save" ? "Connecting..." : "Connect Account"}
                 </button>
               </div>
-            </Form>
-          </div>
-        )}
-
-        {/* Features Section */}
-        <div style={{
-          padding: "4rem 2rem",
-          background: "white"
-        }}>
-          <div style={{
-            textAlign: "center",
-            marginBottom: "3rem"
-          }}>
-            <div style={{
-              display: "inline-flex",
-              alignItems: "center",
-              gap: "0.75rem",
-              marginBottom: "1rem"
-            }}>
-              <img 
-                src="https://cdn.cmsfly.com/6469b4cdc6475c01091b3091/logov2-WMv8SE.png" 
-                alt="Wylto"
-                style={{
-                  height: "32px",
-                  width: "auto",
-                  objectFit: "contain"
-                }}
-              />
-              <h2 style={{
-                fontSize: "2.5rem",
-                fontWeight: "800",
-                margin: 0,
-                background: "linear-gradient(135deg, #1f2937 0%, #16a085 100%)",
-                WebkitBackgroundClip: "text",
-                WebkitTextFillColor: "transparent",
-                backgroundClip: "text"
-              }}>
-                Key Features
-              </h2>
             </div>
-            <div style={{
-              width: "80px",
-              height: "5px",
-              background: "linear-gradient(90deg, #16a085 0%, #138d75 100%)",
-              borderRadius: "3px",
-              margin: "0 auto"
-            }}></div>
           </div>
-          
-          <div style={{
-            display: "grid",
-            gridTemplateColumns: "repeat(auto-fit, minmax(280px, 1fr))",
-            gap: "2rem",
-            marginTop: "3rem"
-          }}>
-            {[
-              {
-                icon: "📦",
-                title: "Order Notifications",
-                desc: "Automatically send WhatsApp confirmations when customers place orders, with order details and tracking information."
-              },
-              {
-                icon: "🚚",
-                title: "Shipping Updates",
-                desc: "Keep customers informed with real-time shipping notifications, tracking numbers, and delivery updates."
-              },
-              {
-                icon: "🛒",
-                title: "Cart Recovery",
-                desc: "Re-engage customers with abandoned cart recovery messages to boost conversions and sales."
-              },
-              {
-                icon: "⚙️",
-                title: "Easy Setup",
-                desc: "Simple configuration through your Shopify admin. Connect your Wylto account in minutes and start sending messages."
-              }
-            ].map((feature, idx) => (
-              <div
-                key={idx}
-                style={{
-                  background: "linear-gradient(135deg, #ffffff 0%, #f0fdf4 100%)",
-                  padding: "2rem",
-                  borderRadius: "16px",
-                  border: "2px solid #e5e7eb",
-                  transition: "all 0.3s ease",
-                  position: "relative",
-                  overflow: "hidden"
-                }}
-                onMouseEnter={(e) => {
-                  e.currentTarget.style.transform = "translateY(-8px)";
-                  e.currentTarget.style.boxShadow = "0 16px 32px rgba(22, 160, 133, 0.2)";
-                  e.currentTarget.style.borderColor = "#16a085";
-                }}
-                onMouseLeave={(e) => {
-                  e.currentTarget.style.transform = "translateY(0)";
-                  e.currentTarget.style.boxShadow = "none";
-                  e.currentTarget.style.borderColor = "#e5e7eb";
-                }}
-              >
-                <div style={{
-                  position: "absolute",
-                  top: 0,
-                  left: 0,
-                  width: "5px",
-                  height: "100%",
-                  background: "#16a085",
-                  transform: "scaleY(0)",
-                  transition: "transform 0.3s ease"
-                }} className="feature-accent"></div>
-                
-                <div style={{
-                  width: "60px",
-                  height: "60px",
-                  background: "linear-gradient(135deg, #16a085 0%, #138d75 100%)",
-                  borderRadius: "50%",
-                  display: "flex",
-                  alignItems: "center",
-                  justifyContent: "center",
-                  fontSize: "2rem",
-                  marginBottom: "1.5rem",
-                  boxShadow: "0 6px 16px rgba(22, 160, 133, 0.3)"
-                }}>{feature.icon}</div>
-                
-                <h3 style={{
-                  fontSize: "1.5rem",
-                  fontWeight: "700",
-                  color: "#1f2937",
-                  margin: "0 0 1rem 0",
-                  lineHeight: "1.3"
-                }}>{feature.title}</h3>
-                
-                <p style={{
-                  fontSize: "1rem",
-                  color: "#6b7280",
-                  lineHeight: "1.7",
-                  margin: "0",
-                  paddingTop: "0.25rem"
-                }}>{feature.desc}</p>
-              </div>
-            ))}
-          </div>
-        </div>
 
-        {/* Footer */}
-        <div style={{
-          background: "linear-gradient(135deg, #f0fdf4 0%, #ffffff 100%)",
-          padding: "2rem",
-          textAlign: "center",
-          borderTop: "2px solid #f0fdf4"
-        }}>
+          {/* Bottom Section: Don't have a Wylto account? */}
           <div style={{
+            paddingTop: "2rem",
+            borderTop: "1px solid #e5e7eb",
             display: "flex",
-            alignItems: "center",
-            justifyContent: "center",
-            gap: "0.75rem",
-            color: "#6b7280",
-            fontSize: "0.95rem"
+            flexDirection: "column",
+            gap: "1.5rem"
           }}>
-            <img 
-              src="https://cdn.cmsfly.com/6469b4cdc6475c01091b3091/logov2-WMv8SE.png" 
-              alt="Wylto"
+            <h2 style={{
+              fontSize: "1.75rem",
+              fontWeight: "700",
+              color: "#1f2937",
+              margin: "0",
+              lineHeight: "1.3"
+            }}>
+              Don't have a Wylto account?
+            </h2>
+
+            <p style={{
+              fontSize: "1rem",
+              color: "#4b5563",
+              margin: "0",
+              lineHeight: "1.6"
+            }}>
+              Wylto provides WhatsApp Business API with automated messaging for Shopify stores. Get started with:
+            </p>
+
+            <ul style={{
+              margin: "0",
+              paddingLeft: "1.5rem",
+              fontSize: "1rem",
+              color: "#4b5563",
+              lineHeight: "1.8",
+              display: "flex",
+              flexDirection: "column",
+              gap: "0.5rem"
+            }}>
+              <li>Automated order confirmations</li>
+              <li>Real-time shipping notifications</li>
+              <li>Abandoned cart recovery</li>
+              <li>100% template compliance</li>
+            </ul>
+
+            <a
+              href="https://wylto.com"
+              target="_blank"
+              rel="noopener noreferrer"
               style={{
-                height: "24px",
-                width: "auto",
-                objectFit: "contain"
+                display: "inline-block",
+                padding: "0.75rem 1.5rem",
+                background: "#ffffff",
+                color: "#1f2937",
+                border: "1px solid #d1d5db",
+                borderRadius: "8px",
+                fontSize: "0.9375rem",
+                fontWeight: "500",
+                textDecoration: "none",
+                cursor: "pointer",
+                transition: "all 0.2s",
+                width: "fit-content"
               }}
-            />
-            <span>Secure integration powered by <strong style={{ color: "#16a085" }}>Wylto</strong> • Built for Shopify merchants</span>
+              onMouseEnter={(e) => {
+                e.target.style.borderColor = "#9ca3af";
+                e.target.style.background = "#f9fafb";
+              }}
+              onMouseLeave={(e) => {
+                e.target.style.borderColor = "#d1d5db";
+                e.target.style.background = "#ffffff";
+              }}
+            >
+              Get Wylto Account →
+            </a>
           </div>
         </div>
       </div>
-
-      <style>{`
-        @keyframes pulse {
-          0%, 100% { transform: scale(1); }
-          50% { transform: scale(1.1); }
-        }
-        .feature-accent {
-          transition: transform 0.3s ease !important;
-        }
-        div:hover .feature-accent {
-          transform: scaleY(1) !important;
-        }
-      `}</style>
-    </div>
+    </>
   );
 }

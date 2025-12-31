@@ -5,220 +5,187 @@ import { login } from "../../shopify.server";
 import { loginErrorMessage } from "./error.server";
 
 export const loader = async ({ request }) => {
-  const errors = loginErrorMessage(await login(request));
+  try {
+    const loginResult = await login(request);
+    const errors = loginErrorMessage(loginResult);
 
-  return { errors };
+    // eslint-disable-next-line no-undef
+    return { errors, apiKey: process.env.SHOPIFY_API_KEY || "" };
+  } catch (error) {
+    // If login throws a redirect or other response, let it propagate
+    throw error;
+  }
 };
 
 export const action = async ({ request }) => {
-  const errors = loginErrorMessage(await login(request));
+  try {
+    const loginResult = await login(request);
+    const errors = loginErrorMessage(loginResult);
 
-  return {
-    errors,
-  };
+    // eslint-disable-next-line no-undef
+    return {
+      errors,
+      apiKey: process.env.SHOPIFY_API_KEY || "",
+    };
+  } catch (error) {
+    // If login throws a redirect or other response, let it propagate
+    throw error;
+  }
 };
 
 export default function Auth() {
   const loaderData = useLoaderData();
   const actionData = useActionData();
   const [shop, setShop] = useState("");
-  const { errors } = actionData || loaderData;
+  const { errors, apiKey } = actionData || loaderData;
 
-  // Format shop domain helper
   const handleShopChange = (e) => {
     let value = e.currentTarget.value.trim().toLowerCase();
-    // Auto-format: if user types without .myshopify.com, suggest it
-    if (value && !value.includes(".") && !value.includes(" ")) {
-      // Don't auto-add, just let them type
-    }
     setShop(value);
   };
 
   return (
-    <AppProvider embedded={false}>
+    <AppProvider embedded={false} apiKey={apiKey}>
       <style>{`
-        @keyframes pulse {
-          0%, 100% { transform: scale(1); }
-          50% { transform: scale(1.05); }
+        * {
+          box-sizing: border-box;
+        }
+        body {
+          margin: 0;
+          padding: 0;
+          font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+          background: #ffffff;
         }
       `}</style>
-      <s-page>
-        <div style={{ 
-          maxWidth: "500px", 
-          margin: "0 auto", 
-          padding: "2rem 1rem",
+      <div style={{
+        minHeight: "100vh",
+        width: "100%",
+        background: "#ffffff",
+        padding: "3rem 1.5rem",
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "center"
+      }}>
+        <div style={{
+          maxWidth: "600px",
+          width: "100%",
           display: "flex",
           flexDirection: "column",
-          gap: "1.5rem",
-          background: "linear-gradient(135deg, #f0fdf4 0%, #ffffff 50%, #fff7ed 100%)",
-          minHeight: "100vh",
-          alignItems: "center",
-          justifyContent: "center"
+          gap: "1.5rem"
         }}>
           {/* Header */}
-          <div style={{ 
-            textAlign: "center", 
-            marginBottom: "1rem",
-            background: "white",
-            padding: "2rem",
-            borderRadius: "16px",
-            boxShadow: "0 10px 40px rgba(0, 0, 0, 0.1)",
-            border: "1px solid rgba(22, 160, 133, 0.1)",
-            width: "100%"
+          <div style={{
+            display: "flex",
+            flexDirection: "column",
+            gap: "1rem"
           }}>
-            {/* Wylto Logo */}
-            <div style={{
-              display: "inline-flex",
-              alignItems: "center",
-              justifyContent: "center",
-              marginBottom: "1.5rem",
-              background: "rgba(22, 160, 133, 0.1)",
-              padding: "0.75rem 1.5rem",
-              borderRadius: "12px"
-            }}>
-              <img 
-                src="https://cdn.cmsfly.com/6469b4cdc6475c01091b3091/logov2-WMv8SE.png" 
-                alt="Wylto Logo"
-                style={{
-                  height: "40px",
-                  width: "auto",
-                  objectFit: "contain"
-                }}
-              />
-            </div>
-            
-            <div style={{ 
-              fontSize: "3rem", 
-              marginBottom: "1.25rem", 
-              color: "#16a085",
-              filter: "drop-shadow(0 4px 8px rgba(22, 160, 133, 0.3))",
-              animation: "pulse 2s ease-in-out infinite"
-            }}>💬</div>
-            
-            <h1 style={{ 
-              fontSize: "1.75rem", 
-              fontWeight: "700", 
-              background: "linear-gradient(135deg, #1f2937 0%, #16a085 100%)",
-              WebkitBackgroundClip: "text",
-              WebkitTextFillColor: "transparent",
-              backgroundClip: "text",
-              margin: "0 0 1rem 0",
+            <h1 style={{
+              fontSize: "1.75rem",
+              fontWeight: "700",
+              color: "#1f2937",
+              margin: "0",
               lineHeight: "1.3"
             }}>
               Connect Your Shopify Store
             </h1>
-            
-            <p style={{ 
-              color: "#6b7280", 
-              fontSize: "0.95rem",
+
+            <p style={{
+              fontSize: "1rem",
+              color: "#4b5563",
               margin: "0",
-              lineHeight: "1.6",
-              paddingTop: "0.5rem"
+              lineHeight: "1.6"
             }}>
-              Enter your store domain to connect with Wylto WhatsApp integration
+              Enter your store domain to connect with Wylto WhatsApp integration.
             </p>
           </div>
 
           {/* Login Form */}
-          <Form method="post" style={{ 
-            display: "flex", 
-            flexDirection: "column", 
-            gap: "1.5rem",
-            background: "white",
-            padding: "2rem",
-            borderRadius: "16px",
-            boxShadow: "0 10px 40px rgba(0, 0, 0, 0.1)",
-            border: "2px solid #16a085",
-            width: "100%"
+          <Form method="post" style={{
+            display: "flex",
+            flexDirection: "column",
+            gap: "1rem"
           }}>
-            <s-section>
-              <div style={{ display: "flex", flexDirection: "column", gap: "1rem" }}>
-                <s-text-field
-                  name="shop"
-                  label="Shop domain"
-                  placeholder="your-store.myshopify.com"
-                  value={shop}
-                  onChange={handleShopChange}
-                  autocomplete="on"
-                  error={errors.shop}
-                  required
-                >
-                  <s-text tone="subdued" slot="helpText">
-                    Enter your Shopify store domain (e.g., my-store.myshopify.com)
-                  </s-text>
-                </s-text-field>
-
-                <s-button 
-                  type="submit" 
-                  variant="primary"
-                  style={{ width: "100%" }}
-                >
-                  Connect Store
-                </s-button>
-              </div>
-            </s-section>
-          </Form>
-
-          {/* Help Section */}
-          <div style={{ 
-            marginTop: "1rem",
-            padding: "1.5rem",
-            background: "linear-gradient(135deg, #fff7ed 0%, #ffffff 100%)",
-            borderRadius: "12px",
-            border: "2px solid #fed7aa",
-            boxShadow: "0 4px 12px rgba(255, 152, 0, 0.15)",
-            width: "100%"
-          }}>
-            <s-text tone="subdued" style={{ fontSize: "0.875rem", display: "block", marginBottom: "0.75rem", fontWeight: "600", marginTop: "0" }}>
-              <strong>Need help?</strong>
-            </s-text>
-            <s-text tone="subdued" style={{ fontSize: "0.875rem", display: "block", lineHeight: "1.6", marginTop: "0" }}>
-              Your shop domain is the URL you use to access your Shopify admin. 
-              It typically ends with <code style={{ background: "#e5e7eb", padding: "0.125rem 0.25rem", borderRadius: "4px" }}>.myshopify.com</code>
-            </s-text>
-          </div>
-
-          {/* Features Preview */}
-          <div style={{ 
-            marginTop: "1rem",
-            padding: "1.5rem",
-            background: "linear-gradient(135deg, #f0fdf4 0%, #ffffff 100%)",
-            borderRadius: "12px",
-            border: "2px solid #16a085",
-            boxShadow: "0 4px 12px rgba(22, 160, 133, 0.15)",
-            width: "100%"
-          }}>
-            <s-text tone="subdued" style={{ fontSize: "0.875rem", display: "block", marginBottom: "1rem", fontWeight: "600" }}>
-              <strong>What you'll get:</strong>
-            </s-text>
-            <ul style={{ 
-              margin: 0, 
-              paddingLeft: "0", 
-              fontSize: "0.875rem",
-              color: "#6b7280",
-              lineHeight: "1.8",
-              listStyle: "none"
+            <div style={{
+              display: "flex",
+              flexDirection: "column",
+              gap: "0.5rem"
             }}>
-              <li style={{ marginBottom: "0.75rem", display: "flex", alignItems: "center", gap: "0.5rem" }}>
-                <span style={{ color: "#16a085", fontSize: "1rem", fontWeight: "bold" }}>✓</span>
-                Automated WhatsApp order confirmations
-              </li>
-              <li style={{ marginBottom: "0.75rem", display: "flex", alignItems: "center", gap: "0.5rem" }}>
-                <span style={{ color: "#16a085", fontSize: "1rem", fontWeight: "bold" }}>✓</span>
-                Shipping and tracking notifications
-              </li>
-              <li style={{ marginBottom: "0.75rem", display: "flex", alignItems: "center", gap: "0.5rem" }}>
-                <span style={{ color: "#16a085", fontSize: "1rem", fontWeight: "bold" }}>✓</span>
-                Abandoned cart recovery messages
-              </li>
-              <li style={{ display: "flex", alignItems: "center", gap: "0.5rem", marginTop: "0" }}>
-                <span style={{ color: "#16a085", fontSize: "1rem", fontWeight: "bold" }}>✓</span>
-                Easy setup and configuration
-              </li>
-            </ul>
-          </div>
+              <label htmlFor="shop" style={{
+                fontSize: "0.875rem",
+                fontWeight: "600",
+                color: "#1f2937"
+              }}>
+                Shop domain
+              </label>
+              <input
+                id="shop"
+                name="shop"
+                type="text"
+                value={shop}
+                onChange={handleShopChange}
+                placeholder="your-store.myshopify.com"
+                required
+                style={{
+                  width: "100%",
+                  padding: "0.75rem 1rem",
+                  border: errors?.shop ? "1px solid #dc2626" : "1px solid #d1d5db",
+                  borderRadius: "8px",
+                  fontSize: "0.9375rem",
+                  color: "#1f2937",
+                  outline: "none",
+                  transition: "border-color 0.2s"
+                }}
+                onFocus={(e) => e.target.style.borderColor = "#16a085"}
+                onBlur={(e) => {
+                  e.target.style.borderColor = errors?.shop ? "#dc2626" : "#d1d5db";
+                }}
+              />
+              {errors?.shop && (
+                <p style={{
+                  fontSize: "0.875rem",
+                  color: "#dc2626",
+                  margin: "0"
+                }}>
+                  {errors.shop}
+                </p>
+              )}
+              <p style={{
+                fontSize: "0.875rem",
+                color: "#6b7280",
+                margin: "0",
+                lineHeight: "1.5"
+              }}>
+                Enter your Shopify store domain (e.g., my-store.myshopify.com)
+              </p>
+            </div>
+
+            <button
+              type="submit"
+              style={{
+                padding: "0.75rem 1.5rem",
+                background: "#16a085",
+                color: "#ffffff",
+                border: "none",
+                borderRadius: "8px",
+                fontSize: "0.9375rem",
+                fontWeight: "600",
+                cursor: "pointer",
+                transition: "all 0.2s",
+                width: "100%",
+                marginTop: "0.5rem"
+              }}
+              onMouseEnter={(e) => {
+                e.target.style.background = "#138d75";
+              }}
+              onMouseLeave={(e) => {
+                e.target.style.background = "#16a085";
+              }}
+            >
+              Connect Store
+            </button>
+          </Form>
         </div>
-      </s-page>
+      </div>
     </AppProvider>
   );
 }
