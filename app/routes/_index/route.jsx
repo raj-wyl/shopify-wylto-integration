@@ -178,7 +178,7 @@ export default function WyltoConnection() {
               lineHeight: "1.6"
             }}>
               Enter your Wylto API key to start automating WhatsApp messages for order confirmations, shipping updates, and cart recovery.
-            </p>
+        </p>
 
             <div style={{
               display: "flex",
@@ -239,7 +239,7 @@ export default function WyltoConnection() {
                     color: "#1f2937"
                   }}>
                     Wylto Account ID
-                  </label>
+            </label>
                   <input
                     id="wyltoAccountId"
                     type="text"
@@ -366,7 +366,7 @@ export default function WyltoConnection() {
                   }}
                 >
                   {isLoading && actionType === "save" ? "Connecting..." : "Connect Account"}
-                </button>
+            </button>
               </div>
             </div>
           </div>
@@ -412,7 +412,7 @@ export default function WyltoConnection() {
               <li>Real-time shipping notifications</li>
               <li>Abandoned cart recovery</li>
               <li>100% template compliance</li>
-            </ul>
+        </ul>
 
             <a
               href="https://wylto.com"

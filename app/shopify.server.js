@@ -7,6 +7,7 @@ import {
 } from "@shopify/shopify-app-react-router/server";
 import { PrismaSessionStorage } from "@shopify/shopify-app-session-storage-prisma";
 import prisma from "./db.server";
+import { saveAccessToken } from "./wylto-connection.server";
 
 const shopify = shopifyApp({
   apiKey: process.env.SHOPIFY_API_KEY,
@@ -30,6 +31,19 @@ const shopify = shopifyApp({
   hooks: {
     afterAuth: async ({ session }) => {
       await shopify.registerWebhooks({ session });
+      
+      // Save Shopify access token to Wylto after OAuth installation
+      try {
+        const result = await saveAccessToken(session.shop, session.accessToken);
+        if (result.success) {
+          console.log(`Access token saved to Wylto for ${session.shop}`);
+        } else {
+          console.warn(`Failed to save access token to Wylto for ${session.shop}:`, result.error);
+        }
+      } catch (error) {
+        // Don't fail OAuth if Wylto API call fails
+        console.error(`Error saving access token to Wylto for ${session.shop}:`, error);
+      }
     },
   },
   ...(process.env.SHOP_CUSTOM_DOMAIN

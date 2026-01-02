@@ -23,10 +23,10 @@ export const action = async ({ request }) => {
     const errors = loginErrorMessage(loginResult);
 
     // eslint-disable-next-line no-undef
-    return {
-      errors,
+  return {
+    errors,
       apiKey: process.env.SHOPIFY_API_KEY || "",
-    };
+  };
   } catch (error) {
     // If login throws a redirect or other response, let it propagate
     throw error;
@@ -119,9 +119,9 @@ export default function Auth() {
               </label>
               <input
                 id="shop"
-                name="shop"
+              name="shop"
                 type="text"
-                value={shop}
+              value={shop}
                 onChange={handleShopChange}
                 placeholder="your-store.myshopify.com"
                 required
@@ -183,7 +183,7 @@ export default function Auth() {
             >
               Connect Store
             </button>
-          </Form>
+        </Form>
         </div>
       </div>
     </AppProvider>

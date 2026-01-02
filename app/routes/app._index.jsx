@@ -4,6 +4,7 @@ import { useAppBridge } from "@shopify/app-bridge-react";
 import { boundary } from "@shopify/shopify-app-react-router/server";
 import { authenticate } from "../shopify.server";
 import { getStoreByShopDomain, updateStoreConfig } from "../store.server";
+import { connectToApp, checkConnectionStatus } from "../wylto-connection.server";
 
 /**
  * App Home Page - Wylto Account Connection
@@ -19,11 +20,21 @@ export const loader = async ({ request }) => {
   // Load current Store configuration
   const store = await getStoreByShopDomain(shopDomain);
 
+  // Check connection status from Wylto
+  let connectionStatus = { connected: false };
+  try {
+    connectionStatus = await checkConnectionStatus(shopDomain);
+  } catch (error) {
+    console.error("Failed to check connection status:", error);
+  }
+
   return {
     shopDomain,
     hasApiKey: !!store?.wyltoApiKey,
     hasAccountId: !!store?.wyltoAccountId,
     isConfigured: !!(store?.wyltoApiKey && store?.wyltoAccountId && store?.isActive),
+    connectionStatus: connectionStatus.connected,
+    connectionData: connectionStatus.data || null,
   };
 };
 
@@ -32,44 +43,66 @@ export const action = async ({ request }) => {
   const shopDomain = session.shop;
 
   const formData = await request.formData();
-  const wyltoApiKey = formData.get("wyltoApiKey")?.toString().trim() || "";
-  const wyltoAccountId = formData.get("wyltoAccountId")?.toString().trim() || "";
+  const wyltoToken = formData.get("wyltoToken")?.toString().trim() || "";
   const actionType = formData.get("actionType")?.toString() || "";
 
-  // Test connection action
+  // Test connection action - check status
   if (actionType === "test") {
-    if (!wyltoApiKey) {
+    try {
+      const status = await checkConnectionStatus(shopDomain);
+      if (status.connected) {
+        return {
+          success: true,
+          message: "Store is connected to Wylto!",
+          connectionData: status.data,
+        };
+      } else {
+        return {
+          success: false,
+          error: "Store is not connected to Wylto. Please connect using your Wylto app token.",
+        };
+      }
+    } catch (error) {
       return {
         success: false,
-        error: "Please enter your Wylto API key to test the connection.",
+        error: error.message || "Failed to check connection status.",
       };
     }
-    // TODO: Add actual API test call here
-    return {
-      success: true,
-      message: "Connection test successful!",
-    };
   }
 
-  // Save connection action
-  if (actionType === "save") {
-    if (!wyltoApiKey || !wyltoAccountId) {
+  // Connect to app action - use applink API
+  if (actionType === "connect") {
+    if (!wyltoToken) {
       return {
         success: false,
-        error: "Both API Key and Account ID are required.",
+        error: "Wylto app token is required.",
       };
     }
 
     try {
+      // Call Wylto applink API
+      const result = await connectToApp(shopDomain, wyltoToken);
+      
+      if (!result.success) {
+        return {
+          success: false,
+          error: result.error || "Failed to connect to Wylto app.",
+        };
+      }
+
+      // Store connection info locally (optional - for reference)
+      // The main connection is managed by Wylto server
       await updateStoreConfig(shopDomain, {
-        wyltoApiKey,
-        wyltoAccountId,
         isActive: true,
+        // Store app info if returned
+        wyltoApiKey: result.data?.appId || null,
+        wyltoAccountId: result.data?.appName || null,
       });
 
       return {
         success: true,
-        message: "Wylto account connected successfully!",
+        message: "Store connected to Wylto successfully!",
+        connectionData: result.data,
       };
     } catch (error) {
       return {
@@ -90,9 +123,7 @@ export default function WyltoConnection() {
   const fetcher = useFetcher();
   const shopify = useAppBridge();
   const navigate = useNavigate();
-  const [wyltoApiKey, setWyltoApiKey] = useState("");
-  const [wyltoAccountId, setWyltoAccountId] = useState("");
-  const [showAccountId, setShowAccountId] = useState(false);
+  const [wyltoToken, setWyltoToken] = useState("");
   const [actionType, setActionType] = useState("");
 
   const actionData = fetcher.data;
@@ -104,7 +135,9 @@ export default function WyltoConnection() {
       shopify.toast.show(actionData.message || "Settings saved successfully!");
       // Reload page data after successful connection
       if (actionData.message?.includes("connected")) {
-        window.location.reload();
+        setTimeout(() => {
+          window.location.reload();
+        }, 1000);
       }
     } else if (actionData?.error) {
       shopify.toast.show(actionData.error, { isError: true });
@@ -115,14 +148,13 @@ export default function WyltoConnection() {
     e.preventDefault();
     setActionType(type);
     const formData = new FormData();
-    formData.append("wyltoApiKey", wyltoApiKey);
-    formData.append("wyltoAccountId", wyltoAccountId);
+    formData.append("wyltoToken", wyltoToken);
     formData.append("actionType", type);
     fetcher.submit(formData, { method: "POST" });
   };
 
-  // If already configured, show success message
-  if (loaderData.isConfigured) {
+  // If already connected, show success message
+  if (loaderData.connectionStatus || loaderData.isConfigured) {
     return (
       <s-page heading="Wylto Connected">
         <s-section heading="Wylto Integration">
@@ -137,6 +169,17 @@ export default function WyltoConnection() {
               ✓ Wylto is connected and active for {loaderData.shopDomain}
             </s-text>
           </s-box>
+          {loaderData.connectionData && (
+            <s-box marginBlockStart="base" padding="base" background="subdued" borderRadius="base">
+              <s-text tone="subdued" style={{ fontSize: "0.875rem" }}>
+                App ID: {loaderData.connectionData.appId || "N/A"}
+                {loaderData.connectionData.appName && ` | App: ${loaderData.connectionData.appName}`}
+                {loaderData.connectionData.tokenValid !== undefined && (
+                  ` | Token Valid: ${loaderData.connectionData.tokenValid ? "Yes" : "No"}`
+                )}
+              </s-text>
+            </s-box>
+          )}
           <s-paragraph marginBlockStart="base">
             Your WhatsApp messages will be sent automatically for orders, fulfillments, and cart recovery.
           </s-paragraph>
@@ -150,24 +193,24 @@ export default function WyltoConnection() {
       {/* Top Section: Connect Your Wylto Account */}
       <s-section heading="Connect Your Wylto Account">
         <s-paragraph>
-          Enter your Wylto API key to start automating WhatsApp messages for order confirmations, shipping updates, and cart recovery.
+          Enter your Wylto app token to link this Shopify store to your Wylto account and start automating WhatsApp messages for order confirmations, shipping updates, and cart recovery.
         </s-paragraph>
 
         <s-stack direction="block" gap="base" marginBlockStart="base">
-          {/* Wylto API Key Field */}
+          {/* Wylto App Token Field */}
           <s-box style={{ width: "100%", maxWidth: "100%" }}>
-            <s-label for="wyltoApiKey" style={{ display: "block", marginBottom: "8px" }}>
-              Wylto API Key
+            <s-label for="wyltoToken" style={{ display: "block", marginBottom: "8px" }}>
+              Wylto App Token
             </s-label>
             <s-text tone="subdued" style={{ display: "block", marginTop: "0", marginBottom: "16px" }}>
-              Find this in your Wylto Dashboard → Settings → API Keys.
+              Find this in your Wylto Dashboard → Apps → Your App → Settings.
             </s-text>
             <input
-              id="wyltoApiKey"
+              id="wyltoToken"
               type="password"
-              value={wyltoApiKey}
-              onChange={(e) => setWyltoApiKey(e.target.value)}
-              placeholder="Enter your API key"
+              value={wyltoToken}
+              onChange={(e) => setWyltoToken(e.target.value)}
+              placeholder="Enter your Wylto app token"
               disabled={isLoading}
               style={{
                 width: "100%",
@@ -187,40 +230,6 @@ export default function WyltoConnection() {
             />
           </s-box>
 
-          {showAccountId && (
-            <s-box style={{ width: "100%", maxWidth: "100%" }}>
-              <s-label for="wyltoAccountId" style={{ display: "block", marginBottom: "8px" }}>
-                Wylto Account ID
-              </s-label>
-              <s-text tone="subdued" style={{ display: "block", marginTop: "0", marginBottom: "16px" }}>
-                Enter your Wylto Account ID to complete the connection.
-              </s-text>
-              <input
-                id="wyltoAccountId"
-                type="text"
-                value={wyltoAccountId}
-                onChange={(e) => setWyltoAccountId(e.target.value)}
-                placeholder="Enter your Account ID"
-                disabled={isLoading}
-                style={{
-                  width: "100%",
-                  maxWidth: "100%",
-                  boxSizing: "border-box",
-                  padding: "0.875rem 1rem",
-                  marginTop: "0",
-                  border: "1px solid #d1d5db",
-                  borderRadius: "8px",
-                  fontSize: "0.9375rem",
-                  color: "#1f2937",
-                  outline: "none",
-                  transition: "border-color 0.2s"
-                }}
-                onFocus={(e) => e.target.style.borderColor = "#16a085"}
-                onBlur={(e) => e.target.style.borderColor = "#d1d5db"}
-              />
-            </s-box>
-          )}
-
           {actionData?.error && (
             <s-box
               padding="base"
@@ -233,7 +242,7 @@ export default function WyltoConnection() {
             </s-box>
           )}
 
-          {actionData?.success && !actionData?.redirect && (
+          {actionData?.success && (
             <s-box
               padding="base"
               borderWidth="base"
@@ -242,33 +251,30 @@ export default function WyltoConnection() {
               marginBlockStart="base"
             >
               <s-text tone="success">{actionData.message}</s-text>
+              {actionData.connectionData && (
+                <s-text tone="subdued" style={{ display: "block", marginTop: "8px", fontSize: "0.875rem" }}>
+                  App ID: {actionData.connectionData.appId || "N/A"}
+                  {actionData.connectionData.appName && ` | App: ${actionData.connectionData.appName}`}
+                </s-text>
+              )}
             </s-box>
           )}
 
           <s-stack direction="inline" gap="base" marginBlockStart="base">
             <s-button
               onClick={(e) => handleSubmit(e, "test")}
-              disabled={isLoading || !wyltoApiKey}
+              disabled={isLoading}
               loading={isLoading && actionType === "test"}
             >
-              Test Connection
+              Check Status
             </s-button>
             <s-button
-              onClick={(e) => {
-                if (!showAccountId) {
-                  setShowAccountId(true);
-                  setTimeout(() => {
-                    document.getElementById("wyltoAccountId")?.focus();
-                  }, 100);
-                } else {
-                  handleSubmit(e, "save");
-                }
-              }}
-              disabled={isLoading || !wyltoApiKey || (showAccountId && !wyltoAccountId)}
-              loading={isLoading && actionType === "save"}
+              onClick={(e) => handleSubmit(e, "connect")}
+              disabled={isLoading || !wyltoToken}
+              loading={isLoading && actionType === "connect"}
               variant="primary"
             >
-              Connect Account
+              Connect Store
             </s-button>
           </s-stack>
         </s-stack>
