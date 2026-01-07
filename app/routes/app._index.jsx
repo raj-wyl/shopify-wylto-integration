@@ -4,7 +4,7 @@ import { useAppBridge } from "@shopify/app-bridge-react";
 import { boundary } from "@shopify/shopify-app-react-router/server";
 import { authenticate } from "../shopify.server";
 import { getStoreByShopDomain, updateStoreConfig } from "../store.server";
-import { connectToApp, checkConnectionStatus } from "../wylto-connection.server";
+import { connectToApp, checkConnectionStatus, saveAccessToken } from "../wylto-connection.server";
 
 /**
  * App Home Page - Wylto Account Connection
@@ -57,11 +57,12 @@ export const action = async ({ request }) => {
           connectionData: status.data,
         };
       } else {
+        // Show specific error if available, otherwise show generic message
         return {
           success: false,
-          error: "Store is not connected to Wylto. Please connect using your Wylto app token.",
+          error: status.error || "Store is not connected to Wylto. Please connect using your Wylto app token.",
         };
-      }
+              }
     } catch (error) {
       return {
         success: false,
@@ -80,7 +81,18 @@ export const action = async ({ request }) => {
     }
 
     try {
-      // Call Wylto applink API
+      // First, ensure store is registered with Wylto (saveAccessToken)
+      // This should have happened during OAuth, but if it failed, try again
+      console.log(`[Wylto API] Ensuring store ${shopDomain} is registered with Wylto...`);
+      const saveResult = await saveAccessToken(shopDomain, session.accessToken);
+      if (!saveResult.success) {
+        console.warn(`Failed to save access token: ${saveResult.error}`);
+        // Continue anyway - might already be registered
+      } else {
+        console.log(`Store ${shopDomain} registered with Wylto`);
+      }
+
+      // Now link the store to Wylto account
       const result = await connectToApp(shopDomain, wyltoToken);
       
       if (!result.success) {
@@ -92,12 +104,19 @@ export const action = async ({ request }) => {
 
       // Store connection info locally (optional - for reference)
       // The main connection is managed by Wylto server
-      await updateStoreConfig(shopDomain, {
-        isActive: true,
-        // Store app info if returned
-        wyltoApiKey: result.data?.appId || null,
-        wyltoAccountId: result.data?.appName || null,
-      });
+      try {
+        await updateStoreConfig(shopDomain, {
+          isActive: true,
+          // Store app info if returned
+          wyltoApiKey: result.data?.appId || null,
+          wyltoAccountId: result.data?.appName || null,
+        });
+        console.log(`[Database] Updated isActive to true for ${shopDomain}`);
+      } catch (dbError) {
+        console.error(`[Database] Failed to update isActive:`, dbError);
+        // Don't fail the connection if database update fails
+        // The connection is still valid on Wylto server
+      }
 
       return {
         success: true,
@@ -155,7 +174,7 @@ export default function WyltoConnection() {
 
   // If already connected, show success message
   if (loaderData.connectionStatus || loaderData.isConfigured) {
-    return (
+  return (
       <s-page heading="Wylto Connected">
         <s-section heading="Wylto Integration">
           <s-box
@@ -182,8 +201,8 @@ export default function WyltoConnection() {
           )}
           <s-paragraph marginBlockStart="base">
             Your WhatsApp messages will be sent automatically for orders, fulfillments, and cart recovery.
-          </s-paragraph>
-        </s-section>
+        </s-paragraph>
+      </s-section>
       </s-page>
     );
   }
@@ -231,25 +250,25 @@ export default function WyltoConnection() {
           </s-box>
 
           {actionData?.error && (
-            <s-box
-              padding="base"
-              borderWidth="base"
-              borderRadius="base"
+              <s-box
+                padding="base"
+                borderWidth="base"
+                borderRadius="base"
               background="critical-subdued"
               marginBlockStart="base"
-            >
+              >
               <s-text tone="critical">{actionData.error}</s-text>
-            </s-box>
+              </s-box>
           )}
 
           {actionData?.success && (
-            <s-box
-              padding="base"
-              borderWidth="base"
-              borderRadius="base"
+              <s-box
+                padding="base"
+                borderWidth="base"
+                borderRadius="base"
               background="success-subdued"
               marginBlockStart="base"
-            >
+              >
               <s-text tone="success">{actionData.message}</s-text>
               {actionData.connectionData && (
                 <s-text tone="subdued" style={{ display: "block", marginTop: "8px", fontSize: "0.875rem" }}>
@@ -257,7 +276,7 @@ export default function WyltoConnection() {
                   {actionData.connectionData.appName && ` | App: ${actionData.connectionData.appName}`}
                 </s-text>
               )}
-            </s-box>
+              </s-box>
           )}
 
           <s-stack direction="inline" gap="base" marginBlockStart="base">
@@ -277,7 +296,7 @@ export default function WyltoConnection() {
               Connect Store
             </s-button>
           </s-stack>
-        </s-stack>
+            </s-stack>
       </s-section>
 
       {/* Bottom Section: Don't have a Wylto account? */}
