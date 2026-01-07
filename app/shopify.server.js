@@ -4,8 +4,8 @@ import {
   AppDistribution,
   DeliveryMethod,
   shopifyApp,
-  MemorySessionStorage,
 } from "@shopify/shopify-app-react-router/server";
+import { MemorySessionStorage } from "@shopify/shopify-app-session-storage-memory";
 
 const shopify = shopifyApp({
   apiKey: process.env.SHOPIFY_API_KEY,
