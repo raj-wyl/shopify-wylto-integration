@@ -1,7 +1,7 @@
 # Learn more about configuring your app at https://shopify.dev/docs/apps/tools/cli/configuration
 
 client_id = "ce16a95a48c256efdaf69d4a96f8e725"
-name = "wyl_store_bnglr"
+name = "wylto"
 application_url = "https://example.com"
 embedded = true
 
