@@ -16,7 +16,7 @@ const shopify = shopifyApp({
   scopes: process.env.SCOPES?.split(","),
   appUrl: process.env.SHOPIFY_APP_URL || "",
   authPathPrefix: "/auth",
-  sessionStorage: new PrismaSessionStorage(prisma),
+  sessionStorage: new MemorySessionStorage(),
   distribution: AppDistribution.AppStore,
   webhooks: {
     APP_UNINSTALLED: {
@@ -45,6 +45,9 @@ const shopify = shopifyApp({
         console.error(`Error saving access token to Wylto for ${session.shop}:`, error);
       }
     },
+  },
+  future: {
+    unstable_newEmbeddedAuthStrategy: true,
   },
   ...(process.env.SHOP_CUSTOM_DOMAIN
     ? { customShopDomains: [process.env.SHOP_CUSTOM_DOMAIN] }
