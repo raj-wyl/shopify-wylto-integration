@@ -25,11 +25,11 @@ import prisma from "./db.server";
 
 /**
  * Base URL for Wylto API.
- * TODO: Replace with actual Wylto API endpoint when available.
- * This can also be moved to environment variable if needed.
+ * From API spec: https://server.wylto.com/
+ * This can be overridden via environment variable if needed.
  */
 const WYLTO_API_BASE_URL =
-  process.env.WYLTO_API_BASE_URL || "https://api.wylto.com";
+  process.env.WYLTO_API_BASE_URL || "https://server.wylto.com";
 
 /**
  * Default timeout for Wylto API requests (in milliseconds).
@@ -415,26 +415,41 @@ async function logMessage({
  * @param {string} params.messageText - Rendered message text
  * @returns {Promise<{success: boolean, wyltoMessageId?: string, statusCode?: number, error?: string}>}
  */
-async function sendToWyltoAPI({ apiKey, accountId, to, messageText }) {
+async function sendToWyltoAPI({ apiKey, accountId, to, messageText, clientMessageId }) {
   try {
     // Step 1: Build API endpoint URL
-    // TODO: Replace with actual Wylto API endpoint path when known
-    const url = `${WYLTO_API_BASE_URL}/messages`;
+    // From API spec: POST /api/v1/wa/send
+    const url = `${WYLTO_API_BASE_URL}/api/v1/wa/send`;
 
     // Step 2: Build HTTP headers
-    // Uses: apiKey and accountId for authentication
+    // From API spec: Bearer token authentication only
     const headers = {
       "Content-Type": "application/json",
-      Authorization: `Bearer ${apiKey}`, // TODO: Adjust auth format based on Wylto API docs
-      "X-Account-Id": accountId, // TODO: Adjust header name based on Wylto API docs
+      Authorization: `Bearer ${apiKey}`,
     };
 
     // Step 3: Build request body
-    // TODO: Adjust body structure based on Wylto API documentation
+    // From API spec: { to, clientMessageId?, message: { type: "template", template: {...} } }
+    // For now, we'll send as a simple text message in the template body
+    // Generate unique message ID if not provided
+    const messageId = clientMessageId || `msg_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+    
     const body = {
       to, // WhatsApp phone number
-      message: messageText, // Rendered message text
-      // Add other fields as required by Wylto API
+      clientMessageId: messageId,
+      message: {
+        type: "template",
+        template: {
+          templateName: "shopify_notification", // Default template name
+          language: "en",
+          body: [
+            {
+              type: "text",
+              text: messageText, // Our rendered message text
+            },
+          ],
+        },
+      },
     };
 
     // Step 4: Make HTTP POST request with timeout
@@ -464,8 +479,9 @@ async function sendToWyltoAPI({ apiKey, accountId, to, messageText }) {
     }
 
     // Step 7: Extract Wylto message ID from response
-    // TODO: Adjust field name based on Wylto API response structure
-    const wyltoMessageId = responseData.messageId || responseData.id || null;
+    // From API spec: Response is { success: boolean }
+    // Use clientMessageId as reference since API doesn't return message ID
+    const wyltoMessageId = responseData.messageId || responseData.id || messageId || null;
 
     return {
       success: true,
@@ -552,11 +568,17 @@ export async function sendWhatsAppMessage({
     // Step 4: Send HTTP request to Wylto API
     // Uses: sendToWyltoAPI() (1.2.5)
     // What it does: Makes POST request to Wylto API with message content
+    // Generate clientMessageId from referenceId if available, otherwise auto-generate
+    const clientMessageId = referenceId
+      ? `shopify_${shopDomain}_${referenceId}_${Date.now()}`
+      : undefined;
+    
     apiResult = await sendToWyltoAPI({
       apiKey: wyltoConfig.apiKey,
       accountId: wyltoConfig.accountId,
       to,
       messageText,
+      clientMessageId,
     });
   } catch (error) {
     // If any step fails (config loading, template rendering, etc.)

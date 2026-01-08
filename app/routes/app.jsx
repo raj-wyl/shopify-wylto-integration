@@ -17,10 +17,13 @@ export default function App() {
     <AppProvider embedded apiKey={apiKey}>
       <s-app-nav>
         <s-link href="/app">Home</s-link>
+        <s-link href="/app/analytics">Data Analytics</s-link>
+        <s-link href="/app/how-to-use">How to use app</s-link>
         <s-link href="/app/additional">Additional page</s-link>
         <s-link href="/app/test-graphql">Test GraphQL</s-link>
         <s-link href="/app/test-wylto">Test Wylto</s-link>
-        <s-link href="/app/wylto-settings">Wylto Settings</s-link>
+        <s-link href="/app/test-webhooks">Test Webhooks</s-link>
+        <s-link href="/app/test-wylto-connection">Test Wylto Connection</s-link>
       </s-app-nav>
       <Outlet />
     </AppProvider>
