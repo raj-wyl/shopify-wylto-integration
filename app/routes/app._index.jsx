@@ -62,7 +62,7 @@ export const action = async ({ request }) => {
           success: false,
           error: status.error || "Store is not connected to Wylto. Please connect using your Wylto app token.",
         };
-              }
+      }
     } catch (error) {
       return {
         success: false,
