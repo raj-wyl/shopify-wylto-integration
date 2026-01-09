@@ -26,6 +26,26 @@ const shopify = shopifyApp({
       deliveryMethod: DeliveryMethod.Http,
       callbackUrl: "/webhooks/app/scopes_update",
     },
+    ORDERS_CREATE: {
+      deliveryMethod: DeliveryMethod.Http,
+      callbackUrl: "/webhooks/orders/create",
+    },
+    ORDERS_UPDATED: {
+      deliveryMethod: DeliveryMethod.Http,
+      callbackUrl: "/webhooks/orders/updated",
+    },
+    FULFILLMENTS_CREATE: {
+      deliveryMethod: DeliveryMethod.Http,
+      callbackUrl: "/webhooks/fulfillments/create",
+    },
+    CHECKOUTS_CREATE: {
+      deliveryMethod: DeliveryMethod.Http,
+      callbackUrl: "/webhooks/checkouts/create",
+    },
+    CHECKOUTS_UPDATE: {
+      deliveryMethod: DeliveryMethod.Http,
+      callbackUrl: "/webhooks/checkouts/update",
+    },
   },
   hooks: {
     afterAuth: async ({ session }) => {
