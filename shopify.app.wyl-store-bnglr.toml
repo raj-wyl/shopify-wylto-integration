@@ -2,7 +2,7 @@
 
 client_id = "ce16a95a48c256efdaf69d4a96f8e725"
 name = "wyl_store_bnglr"
-application_url = "https://example.com"
+application_url = "https://wylto-shopify-pfcaxtk5da-el.a.run.app"
 embedded = true
 
 [build]
@@ -12,36 +12,39 @@ automatically_update_urls_on_dev = true
 api_version = "2026-01"
 
   [[webhooks.subscriptions]]
-  topics = [ "fulfillments/create" ]
-  uri = "/webhooks/fulfillments/create"
+  topics = [ "app/uninstalled" ]
+  uri = "/webhooks/app/uninstalled"
 
   [[webhooks.subscriptions]]
   topics = [ "app/scopes_update" ]
   uri = "/webhooks/app/scopes_update"
 
   [[webhooks.subscriptions]]
-  topics = [ "checkouts/update" ]
-  uri = "/webhooks/checkouts/update"
-
-  [[webhooks.subscriptions]]
-  topics = [ "app/uninstalled" ]
-  uri = "/webhooks/app/uninstalled"
+  topics = [ "orders/create" ]
+  uri = "/webhooks/orders/create"
 
   [[webhooks.subscriptions]]
   topics = [ "orders/updated" ]
   uri = "/webhooks/orders/updated"
 
   [[webhooks.subscriptions]]
-  topics = [ "orders/create" ]
-  uri = "/webhooks/orders/create"
+  topics = [ "fulfillments/create" ]
+  uri = "/webhooks/fulfillments/create"
 
   [[webhooks.subscriptions]]
   topics = [ "checkouts/create" ]
   uri = "/webhooks/checkouts/create"
 
+  [[webhooks.subscriptions]]
+  topics = [ "checkouts/update" ]
+  uri = "/webhooks/checkouts/update"
+
 [access_scopes]
-# Learn more at https://shopify.dev/docs/apps/tools/cli/configuration#access_scopes
 scopes = "read_checkouts,read_customers,read_fulfillments,read_orders,read_products"
 
 [auth]
-redirect_urls = [ "https://example.com/api/auth" ]
+redirect_urls = [
+  "https://wylto-shopify-pfcaxtk5da-el.a.run.app/auth/callback",
+  "https://wylto-shopify-pfcaxtk5da-el.a.run.app/auth/shopify/callback",
+  "https://wylto-shopify-pfcaxtk5da-el.a.run.app/api/auth/callback"
+]

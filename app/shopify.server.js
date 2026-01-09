@@ -26,43 +26,52 @@ const shopify = shopifyApp({
       deliveryMethod: DeliveryMethod.Http,
       callbackUrl: "/webhooks/app/scopes_update",
     },
-    ORDERS_CREATE: {
+    "orders/create": {
       deliveryMethod: DeliveryMethod.Http,
       callbackUrl: "/webhooks/orders/create",
     },
-    ORDERS_UPDATED: {
+    "orders/updated": {
       deliveryMethod: DeliveryMethod.Http,
       callbackUrl: "/webhooks/orders/updated",
     },
-    FULFILLMENTS_CREATE: {
+    "fulfillments/create": {
       deliveryMethod: DeliveryMethod.Http,
       callbackUrl: "/webhooks/fulfillments/create",
     },
-    CHECKOUTS_CREATE: {
+    "checkouts/create": {
       deliveryMethod: DeliveryMethod.Http,
       callbackUrl: "/webhooks/checkouts/create",
     },
-    CHECKOUTS_UPDATE: {
+    "checkouts/update": {
       deliveryMethod: DeliveryMethod.Http,
       callbackUrl: "/webhooks/checkouts/update",
     },
   },
   hooks: {
     afterAuth: async ({ session }) => {
-      await shopify.registerWebhooks({ session });
-      
+      console.log(`[afterAuth] Starting for shop: ${session.shop}`);
+
+      try {
+        const webhookRegistrationResult = await shopify.registerWebhooks({ session });
+        console.log(`[afterAuth] Webhook registration result:`, JSON.stringify(webhookRegistrationResult, null, 2));
+      } catch (error) {
+        console.error(`[afterAuth] Webhook registration failed:`, error);
+      }
+
       // Save Shopify access token to Wylto after OAuth installation
       try {
         const result = await saveAccessToken(session.shop, session.accessToken);
         if (result.success) {
-          console.log(`Access token saved to Wylto for ${session.shop}`);
+          console.log(`[afterAuth] Access token saved to Wylto for ${session.shop}`);
         } else {
-          console.warn(`Failed to save access token to Wylto for ${session.shop}:`, result.error);
+          console.warn(`[afterAuth] Failed to save access token to Wylto for ${session.shop}:`, result.error);
         }
       } catch (error) {
         // Don't fail OAuth if Wylto API call fails
-        console.error(`Error saving access token to Wylto for ${session.shop}:`, error);
+        console.error(`[afterAuth] Error saving access token to Wylto for ${session.shop}:`, error);
       }
+
+      console.log(`[afterAuth] Completed for shop: ${session.shop}`);
     },
   },
   future: {
