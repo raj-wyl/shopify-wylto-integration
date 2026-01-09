@@ -68,8 +68,8 @@ export const action = async ({ request }) => {
         success: false,
         error: error.message || "Failed to check connection status.",
       };
-    }
-  }
+              }
+            }
 
   // Connect to app action - use applink API
   if (actionType === "connect") {
