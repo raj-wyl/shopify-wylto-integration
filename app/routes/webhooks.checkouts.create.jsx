@@ -1,4 +1,5 @@
 import { authenticate } from "../shopify.server";
+import { createWebhookLog, updateManyWebhookLogs } from "../webhook.service";
 import db from "../db.server";
 
 export const action = async ({ request }) => {
@@ -7,15 +8,8 @@ export const action = async ({ request }) => {
   console.log(`Received ${topic} webhook for ${shop}`);
 
   try {
-    // Log the webhook
-    await db.webhookLog.create({
-      data: {
-        shopDomain: shop,
-        topic,
-        payload: JSON.stringify(payload),
-        status: "processing",
-      },
-    });
+    // Log the webhook using service layer
+    await createWebhookLog(shop, topic, payload, "processing");
 
     // TODO: Track abandoned cart for recovery
     // 1. Extract checkout token, customer phone, cart details
@@ -45,31 +39,19 @@ export const action = async ({ request }) => {
       });
     }
 
-    // Update webhook log status
-    await db.webhookLog.updateMany({
-      where: {
-        shopDomain: shop,
-        topic,
-        payload: JSON.stringify(payload),
-      },
-      data: {
-        status: "completed",
-      },
-    });
+    // Update webhook log status using service layer
+    await updateManyWebhookLogs(
+      shop,
+      { topic, payload: JSON.stringify(payload) },
+      { status: "completed" }
+    );
 
     return new Response(null, { status: 200 });
   } catch (error) {
     console.error(`Error processing ${topic}:`, error);
 
-    await db.webhookLog.create({
-      data: {
-        shopDomain: shop,
-        topic,
-        payload: JSON.stringify(payload),
-        status: "failed",
-        errorMessage: error.message,
-      },
-    });
+    // Log error using service layer
+    await createWebhookLog(shop, topic, payload, "failed", error.message);
 
     return new Response(null, { status: 500 });
   }

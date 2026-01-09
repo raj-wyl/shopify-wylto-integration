@@ -1,5 +1,5 @@
 import { authenticate } from "../shopify.server";
-import db from "../db.server";
+import { createWebhookLog, updateManyWebhookLogs } from "../webhook.service";
 import { sendWhatsAppMessage } from "../wylto.server";
 
 export const action = async ({ request }) => {
@@ -8,15 +8,8 @@ export const action = async ({ request }) => {
   console.log(`Received ${topic} webhook for ${shop}`);
 
   try {
-    // Log the webhook
-    await db.webhookLog.create({
-      data: {
-        shopDomain: shop,
-        topic,
-        payload: JSON.stringify(payload),
-        status: "processing",
-      },
-    });
+    // Log the webhook using service layer
+    await createWebhookLog(shop, topic, payload, "processing");
 
     // Process order and send WhatsApp confirmation via Wylto
     console.log(`Order created: ${payload.id} for ${shop}`);
@@ -66,32 +59,19 @@ export const action = async ({ request }) => {
       console.log(`Order ${payload.id} has no customer phone number, skipping WhatsApp message`);
     }
 
-    // Update webhook log status
-    await db.webhookLog.updateMany({
-      where: {
-        shopDomain: shop,
-        topic,
-        payload: JSON.stringify(payload),
-      },
-      data: {
-        status: "completed",
-      },
-    });
+    // Update webhook log status using service layer
+    await updateManyWebhookLogs(
+      shop,
+      { topic, payload: JSON.stringify(payload) },
+      { status: "completed" }
+    );
 
     return new Response(null, { status: 200 });
   } catch (error) {
     console.error(`Error processing ${topic}:`, error);
 
-    // Log error
-    await db.webhookLog.create({
-      data: {
-        shopDomain: shop,
-        topic,
-        payload: JSON.stringify(payload),
-        status: "failed",
-        errorMessage: error.message,
-      },
-    });
+    // Log error using service layer
+    await createWebhookLog(shop, topic, payload, "failed", error.message);
 
     return new Response(null, { status: 500 });
   }

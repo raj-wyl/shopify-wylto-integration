@@ -3,7 +3,7 @@ import { useFetcher, useLoaderData } from "react-router";
 import { useAppBridge } from "@shopify/app-bridge-react";
 import { authenticate } from "../shopify.server";
 import { sendWhatsAppMessage } from "../wylto.server";
-import db from "../db.server";
+import { createWebhookLog, updateWebhookLog } from "../webhook.service";
 
 /**
  * ============================================================================
@@ -62,15 +62,13 @@ export const action = async ({ request }) => {
         },
       };
 
-      // Log webhook
-      const webhookLog = await db.webhookLog.create({
-        data: {
-          shopDomain,
-          topic: "orders/create",
-          payload: JSON.stringify(mockPayload),
-          status: "processing",
-        },
-      });
+      // Log webhook using service layer
+      const webhookLog = await createWebhookLog(
+        shopDomain,
+        "orders/create",
+        mockPayload,
+        "processing"
+      );
 
       // Extract customer phone
       const customerPhone =
@@ -105,11 +103,8 @@ export const action = async ({ request }) => {
           referenceId: mockPayload.id?.toString(),
         });
 
-        // Update webhook log
-        await db.webhookLog.update({
-          where: { id: webhookLog.id },
-          data: { status: "completed" },
-        });
+        // Update webhook log using service layer
+        await updateWebhookLog(webhookLog.id, { status: "completed" });
 
         results.success = true;
         results.message = `Test order created and WhatsApp message sent to ${customerPhone}`;
@@ -135,15 +130,13 @@ export const action = async ({ request }) => {
         },
       };
 
-      // Log webhook
-      const webhookLog = await db.webhookLog.create({
-        data: {
-          shopDomain,
-          topic: "fulfillments/create",
-          payload: JSON.stringify(mockPayload),
-          status: "processing",
-        },
-      });
+      // Log webhook using service layer
+      const webhookLog = await createWebhookLog(
+        shopDomain,
+        "fulfillments/create",
+        mockPayload,
+        "processing"
+      );
 
       // Extract customer phone from nested order
       const customerPhone = mockPayload.order?.customer?.phone;
@@ -168,11 +161,8 @@ export const action = async ({ request }) => {
           referenceId: mockPayload.order_id?.toString(),
         });
 
-        // Update webhook log
-        await db.webhookLog.update({
-          where: { id: webhookLog.id },
-          data: { status: "completed" },
-        });
+        // Update webhook log using service layer
+        await updateWebhookLog(webhookLog.id, { status: "completed" });
 
         results.success = true;
         results.message = `Test fulfillment created and WhatsApp message sent to ${customerPhone}`;
@@ -194,15 +184,13 @@ export const action = async ({ request }) => {
         },
       };
 
-      // Log webhook
-      const webhookLog = await db.webhookLog.create({
-        data: {
-          shopDomain,
-          topic: "orders/updated",
-          payload: JSON.stringify(mockPayload),
-          status: "processing",
-        },
-      });
+      // Log webhook using service layer
+      const webhookLog = await createWebhookLog(
+        shopDomain,
+        "orders/updated",
+        mockPayload,
+        "processing"
+      );
 
       const customerPhone = mockPayload.customer?.phone;
 
@@ -222,11 +210,8 @@ export const action = async ({ request }) => {
           referenceId: mockPayload.id?.toString(),
         });
 
-        // Update webhook log
-        await db.webhookLog.update({
-          where: { id: webhookLog.id },
-          data: { status: "completed" },
-        });
+        // Update webhook log using service layer
+        await updateWebhookLog(webhookLog.id, { status: "completed" });
 
         results.success = true;
         results.message = `Test order cancelled and WhatsApp message sent to ${customerPhone}`;
