@@ -1,103 +1,41 @@
 import { authenticate } from "../shopify.server";
-import { createWebhookLog, updateManyWebhookLogs } from "../webhook.service";
-import { sendWhatsAppMessage } from "../wylto.server";
 
+/**
+ * Webhook: orders/updated
+ * Triggered when an order is updated (status change, cancellation, etc.)
+ * Forwards to Wylto backend for processing and WhatsApp notifications
+ */
 export const action = async ({ request }) => {
-  const { shop, topic, payload } = await authenticate.webhook(request);
-
-  console.log(`Received ${topic} webhook for ${shop}`);
-
   try {
-    // Log the webhook using service layer
-    await createWebhookLog(shop, topic, payload, "processing");
+    const { shop, payload, topic } = await authenticate.webhook(request);
 
-    // Process order update and send WhatsApp notification via Wylto
-    console.log(`Order updated: ${payload.id} for ${shop}`);
+    console.log(`[Webhook] ${topic} received for shop: ${shop}`);
+    console.log(`[Webhook] Order ID: ${payload.id}, Financial Status: ${payload.financial_status}`);
 
-    // Extract order details from payload
-    const customerPhone =
-      payload.customer?.phone ||
-      payload.billing_address?.phone ||
-      payload.shipping_address?.phone;
+    // Forward to Wylto backend
+    const response = await fetch('https://server.wylto.com/api/shopify/webhooks', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${process.env.WYLTO_API_TOKEN}`
+      },
+      body: JSON.stringify({
+        shop,
+        topic,
+        data: payload
+      })
+    });
 
-    // Only send WhatsApp if customer has a phone number
-    if (customerPhone) {
-      try {
-        const orderNumber = payload.name || payload.order_number || `#${payload.id}`;
-        const customerName =
-          payload.customer?.first_name ||
-          payload.billing_address?.first_name ||
-          "Customer";
-        const shopName = shop.replace(".myshopify.com", "");
-        const orderStatus = payload.financial_status || payload.fulfillment_status || "updated";
-        const isCancelled =
-          payload.cancelled_at !== null ||
-          payload.financial_status === "refunded" ||
-          payload.financial_status === "voided";
-
-        // Check if order was cancelled
-        if (isCancelled) {
-          const refundAmount = payload.total_refunded || payload.refunds?.[0]?.amount;
-          const currency = payload.currency || "USD";
-
-          await sendWhatsAppMessage({
-            shopDomain: shop,
-            templateKey: "ORDER_CANCELLED",
-            to: customerPhone,
-            data: {
-              customerName,
-              orderNumber,
-              shopName,
-              refundAmount: refundAmount ? refundAmount.toString() : undefined,
-              currency,
-            },
-            referenceId: payload.id?.toString(),
-          });
-
-          console.log(
-            `WhatsApp cancellation message sent for order ${orderNumber} to ${customerPhone}`
-          );
-        } else {
-          // Send general order update message
-          await sendWhatsAppMessage({
-            shopDomain: shop,
-            templateKey: "ORDER_UPDATED",
-            to: customerPhone,
-            data: {
-              customerName,
-              orderNumber,
-              orderStatus,
-            },
-            referenceId: payload.id?.toString(),
-          });
-
-          console.log(
-            `WhatsApp update message sent for order ${orderNumber} to ${customerPhone}`
-          );
-        }
-      } catch (error) {
-        // Log error but don't fail the webhook
-        console.error(`Failed to send WhatsApp update message for order ${payload.id}:`, error);
-        // Error is already logged in MessageLog by sendWhatsAppMessage
-      }
+    if (!response.ok) {
+      console.error(`[Webhook] Forward failed: ${response.status} ${response.statusText}`);
+      // Don't return error to Shopify - they'll retry
     } else {
-      console.log(`Order ${payload.id} has no customer phone number, skipping WhatsApp message`);
+      console.log(`[Webhook] Forwarded successfully to Wylto backend`);
     }
-
-    // Update webhook log status using service layer
-    await updateManyWebhookLogs(
-      shop,
-      { topic, payload: JSON.stringify(payload) },
-      { status: "completed" }
-    );
 
     return new Response(null, { status: 200 });
   } catch (error) {
-    console.error(`Error processing ${topic}:`, error);
-
-    // Log error using service layer
-    await createWebhookLog(shop, topic, payload, "failed", error.message);
-
-    return new Response(null, { status: 500 });
+    console.error(`[Webhook] Error:`, error);
+    return new Response(null, { status: 200 }); // Always return 200 to Shopify
   }
 };

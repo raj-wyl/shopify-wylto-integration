@@ -1,22 +1,20 @@
 import { authenticate } from "../shopify.server";
-import db from "../db.server";
 
+/**
+ * Webhook: app/scopes_update
+ * Triggered when app scopes are updated
+ *
+ * Note: We use MemorySessionStorage, so scope updates will be handled
+ * automatically on next authentication.
+ */
 export const action = async ({ request }) => {
-  const { payload, session, topic, shop } = await authenticate.webhook(request);
+  const { payload, topic, shop } = await authenticate.webhook(request);
 
-  console.log(`Received ${topic} webhook for ${shop}`);
-  const current = payload.current;
+  console.log(`[Webhook] ${topic} received for ${shop}`);
+  console.log(`[Webhook] New scopes:`, payload.current);
 
-  if (session) {
-    await db.session.update({
-      where: {
-        id: session.id,
-      },
-      data: {
-        scope: current.toString(),
-      },
-    });
-  }
+  // Sessions are stored in memory
+  // New scopes will be applied on next OAuth flow
 
   return new Response();
 };

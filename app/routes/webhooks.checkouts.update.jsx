@@ -1,50 +1,41 @@
 import { authenticate } from "../shopify.server";
-import { createWebhookLog, updateManyWebhookLogs } from "../webhook.service";
-import db from "../db.server";
 
+/**
+ * Webhook: checkouts/update
+ * Triggered when a checkout is updated or completed
+ * Forwards to Wylto backend to track cart recovery conversions
+ */
 export const action = async ({ request }) => {
-  const { shop, topic, payload } = await authenticate.webhook(request);
-
-  console.log(`Received ${topic} webhook for ${shop}`);
-
   try {
-    // Log the webhook using service layer
-    await createWebhookLog(shop, topic, payload, "processing");
+    const { shop, payload, topic } = await authenticate.webhook(request);
 
-    // TODO: Update pending cart or mark as converted
-    // 1. Check if checkout was completed
-    // 2. If completed, mark PendingCart as "converted"
-    // 3. If still abandoned, update cart details
+    console.log(`[Webhook] ${topic} received for shop: ${shop}`);
+    console.log(`[Webhook] Checkout Token: ${payload.token}, Completed: ${!!payload.completed_at}`);
 
-    console.log(`Checkout updated: ${payload.token} for ${shop}`);
+    // Forward to Wylto backend
+    const response = await fetch('https://server.wylto.com/api/shopify/webhooks', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${process.env.WYLTO_API_TOKEN}`
+      },
+      body: JSON.stringify({
+        shop,
+        topic,
+        data: payload
+      })
+    });
 
-    // If checkout is completed, mark pending cart as converted
-    if (payload.completed_at) {
-      await db.pendingCart.updateMany({
-        where: {
-          checkoutToken: payload.token,
-          status: "pending",
-        },
-        data: {
-          status: "converted",
-        },
-      });
+    if (!response.ok) {
+      console.error(`[Webhook] Forward failed: ${response.status} ${response.statusText}`);
+      // Don't return error to Shopify - they'll retry
+    } else {
+      console.log(`[Webhook] Forwarded successfully to Wylto backend`);
     }
-
-    // Update webhook log status using service layer
-    await updateManyWebhookLogs(
-      shop,
-      { topic, payload: JSON.stringify(payload) },
-      { status: "completed" }
-    );
 
     return new Response(null, { status: 200 });
   } catch (error) {
-    console.error(`Error processing ${topic}:`, error);
-
-    // Log error using service layer
-    await createWebhookLog(shop, topic, payload, "failed", error.message);
-
-    return new Response(null, { status: 500 });
+    console.error(`[Webhook] Error:`, error);
+    return new Response(null, { status: 200 }); // Always return 200 to Shopify
   }
 };

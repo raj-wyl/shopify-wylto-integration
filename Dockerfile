@@ -13,12 +13,6 @@ RUN npm ci --omit=dev && npm cache clean --force
 
 COPY . .
 
-# Add Prisma schema
-COPY prisma ./prisma
-
-# Generate Prisma client during build
-RUN npx prisma generate
-
 RUN npm run build
 
 CMD ["npm", "run", "start"]

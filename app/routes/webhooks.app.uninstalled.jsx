@@ -1,16 +1,20 @@
 import { authenticate } from "../shopify.server";
-import db from "../db.server";
 
+/**
+ * Webhook: app/uninstalled
+ * Triggered when the app is uninstalled from a store
+ *
+ * Note: We use MemorySessionStorage, so sessions are automatically cleared on restart.
+ * This webhook is mainly for logging purposes.
+ */
 export const action = async ({ request }) => {
-  const { shop, session, topic } = await authenticate.webhook(request);
+  const { shop, topic } = await authenticate.webhook(request);
 
-  console.log(`Received ${topic} webhook for ${shop}`);
+  console.log(`[Webhook] ${topic} received for ${shop}`);
+  console.log(`[Webhook] App uninstalled from ${shop}`);
 
-  // Webhook requests can trigger multiple times and after an app has already been uninstalled.
-  // If this webhook already ran, the session may have been deleted previously.
-  if (session) {
-    await db.session.deleteMany({ where: { shop } });
-  }
+  // Sessions are stored in memory and will be cleared automatically
+  // No database cleanup needed
 
   return new Response();
 };

@@ -1,88 +1,41 @@
 import { authenticate } from "../shopify.server";
-import { createWebhookLog, updateManyWebhookLogs } from "../webhook.service";
-import { sendWhatsAppMessage } from "../wylto.server";
 
+/**
+ * Webhook: fulfillments/create
+ * Triggered when an order is fulfilled/shipped
+ * Forwards to Wylto backend for processing and WhatsApp shipping notifications
+ */
 export const action = async ({ request }) => {
-  const { shop, topic, payload } = await authenticate.webhook(request);
-
-  console.log(`Received ${topic} webhook for ${shop}`);
-
   try {
-    // Log the webhook using service layer
-    await createWebhookLog(shop, topic, payload, "processing");
+    const { shop, payload, topic } = await authenticate.webhook(request);
 
-    // Process fulfillment and send shipping notification via Wylto
-    console.log(`Fulfillment created: ${payload.id} for ${shop}`);
+    console.log(`[Webhook] ${topic} received for shop: ${shop}`);
+    console.log(`[Webhook] Fulfillment ID: ${payload.id}, Tracking: ${payload.tracking_number || 'N/A'}`);
 
-    // Extract fulfillment details from payload
-    const orderId = payload.order_id?.toString();
-    const trackingNumber = payload.tracking_number || payload.tracking_numbers?.[0];
-    const carrier = payload.tracking_company || payload.tracking_company_name;
+    // Forward to Wylto backend
+    const response = await fetch('https://server.wylto.com/api/shopify/webhooks', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${process.env.WYLTO_API_TOKEN}`
+      },
+      body: JSON.stringify({
+        shop,
+        topic,
+        data: payload
+      })
+    });
 
-    // Get order details to find customer phone
-    // Note: Fulfillment payload may not include customer phone directly
-    // We'll need to fetch order or use order_id as reference
-    if (orderId) {
-      try {
-        // Extract customer info from fulfillment payload if available
-        const customerPhone =
-          payload.order?.customer?.phone ||
-          payload.order?.billing_address?.phone ||
-          payload.order?.shipping_address?.phone;
-
-        if (customerPhone) {
-          const orderNumber =
-            payload.order?.name ||
-            payload.order?.order_number ||
-            `#${orderId}`;
-          const customerName =
-            payload.order?.customer?.first_name ||
-            payload.order?.billing_address?.first_name ||
-            "Customer";
-
-          // Send WhatsApp message using ORDER_FULFILLED template
-          await sendWhatsAppMessage({
-            shopDomain: shop,
-            templateKey: "ORDER_FULFILLED",
-            to: customerPhone,
-            data: {
-              customerName,
-              orderNumber,
-              trackingNumber,
-              carrier,
-            },
-            referenceId: orderId,
-          });
-
-          console.log(
-            `WhatsApp fulfillment message sent for order ${orderNumber} to ${customerPhone}`
-          );
-        } else {
-          console.log(
-            `Fulfillment ${payload.id} has no customer phone number, skipping WhatsApp message`
-          );
-        }
-      } catch (error) {
-        // Log error but don't fail the webhook
-        console.error(`Failed to send WhatsApp fulfillment message:`, error);
-        // Error is already logged in MessageLog by sendWhatsAppMessage
-      }
+    if (!response.ok) {
+      console.error(`[Webhook] Forward failed: ${response.status} ${response.statusText}`);
+      // Don't return error to Shopify - they'll retry
+    } else {
+      console.log(`[Webhook] Forwarded successfully to Wylto backend`);
     }
-
-    // Update webhook log status using service layer
-    await updateManyWebhookLogs(
-      shop,
-      { topic, payload: JSON.stringify(payload) },
-      { status: "completed" }
-    );
 
     return new Response(null, { status: 200 });
   } catch (error) {
-    console.error(`Error processing ${topic}:`, error);
-
-    // Log error using service layer
-    await createWebhookLog(shop, topic, payload, "failed", error.message);
-
-    return new Response(null, { status: 500 });
+    console.error(`[Webhook] Error:`, error);
+    return new Response(null, { status: 200 }); // Always return 200 to Shopify
   }
 };

@@ -3,12 +3,11 @@ import { useFetcher, useLoaderData, useNavigate } from "react-router";
 import { useAppBridge } from "@shopify/app-bridge-react";
 import { boundary } from "@shopify/shopify-app-react-router/server";
 import { authenticate } from "../shopify.server";
-import { getStoreByShopDomain, updateStoreConfig } from "../store.server";
 import { connectToApp, checkConnectionStatus, saveAccessToken } from "../wylto-connection.server";
 
 /**
  * App Home Page - Wylto Account Connection
- * 
+ *
  * This page appears after users install the app from the Shopify App Store.
  * It allows users to connect their existing Wylto account or learn about getting one.
  */
@@ -17,10 +16,7 @@ export const loader = async ({ request }) => {
   const { session } = await authenticate.admin(request);
   const shopDomain = session.shop;
 
-  // Load current Store configuration
-  const store = await getStoreByShopDomain(shopDomain);
-
-  // Check connection status from Wylto
+  // Check connection status from Wylto backend
   let connectionStatus = { connected: false };
   try {
     connectionStatus = await checkConnectionStatus(shopDomain);
@@ -30,10 +26,7 @@ export const loader = async ({ request }) => {
 
   return {
     shopDomain,
-    hasApiKey: !!store?.wyltoApiKey,
-    hasAccountId: !!store?.wyltoAccountId,
-    isConfigured: !!(store?.wyltoApiKey && store?.wyltoAccountId && store?.isActive),
-    connectionStatus: connectionStatus.connected,
+    isConnected: connectionStatus.connected,
     connectionData: connectionStatus.data || null,
   };
 };
@@ -94,28 +87,12 @@ export const action = async ({ request }) => {
 
       // Now link the store to Wylto account
       const result = await connectToApp(shopDomain, wyltoToken);
-      
+
       if (!result.success) {
         return {
           success: false,
           error: result.error || "Failed to connect to Wylto app.",
         };
-      }
-
-      // Store connection info locally (optional - for reference)
-      // The main connection is managed by Wylto server
-      try {
-        await updateStoreConfig(shopDomain, {
-          isActive: true,
-          // Store app info if returned
-          wyltoApiKey: result.data?.appId || null,
-          wyltoAccountId: result.data?.appName || null,
-        });
-        console.log(`[Database] Updated isActive to true for ${shopDomain}`);
-      } catch (dbError) {
-        console.error(`[Database] Failed to update isActive:`, dbError);
-        // Don't fail the connection if database update fails
-        // The connection is still valid on Wylto server
       }
 
       return {
@@ -173,7 +150,7 @@ export default function WyltoConnection() {
   };
 
   // If already connected, show success message
-  if (loaderData.connectionStatus || loaderData.isConfigured) {
+  if (loaderData.isConnected) {
   return (
       <s-page heading="Wylto Connected">
         <s-section heading="Wylto Integration">

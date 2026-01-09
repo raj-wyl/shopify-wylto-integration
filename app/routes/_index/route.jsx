@@ -1,42 +1,16 @@
 import { redirect } from "react-router";
-import { useState, useEffect } from "react";
-import { useLoaderData, useFetcher } from "react-router";
-import { authenticate } from "../../shopify.server";
-import { getStoreByShopDomain, updateStoreConfig } from "../../store.server";
 
 /**
- * Landing page - Wylto Account Connection
- * 
- * This page appears after users install the app from the Shopify App Store.
- * It allows users to connect their existing Wylto account or learn about getting one.
+ * Landing page - Redirects to app home
+ *
+ * This page redirects users to the main app page after authentication.
  */
 
 export const loader = async ({ request }) => {
   const url = new URL(request.url);
 
-  // If shop parameter exists, redirect to app (OAuth flow)
-  if (url.searchParams.get("shop")) {
-    throw redirect(`/app?${url.searchParams.toString()}`);
-  }
-
-  // Try to authenticate - if not authenticated, redirect to login
-  try {
-    const { session } = await authenticate.admin(request);
-    const shopDomain = session.shop;
-
-    // Load current Store configuration
-    const store = await getStoreByShopDomain(shopDomain);
-
-    return {
-      shopDomain,
-      hasApiKey: !!store?.wyltoApiKey,
-      hasAccountId: !!store?.wyltoAccountId,
-      isConfigured: !!(store?.wyltoApiKey && store?.wyltoAccountId && store?.isActive),
-    };
-  } catch (error) {
-    // Not authenticated - redirect to login
-    throw redirect("/auth/login");
-  }
+  // Always redirect to /app (main app page handles everything)
+  throw redirect(`/app?${url.searchParams.toString()}`);
 };
 
 export const action = async ({ request }) => {

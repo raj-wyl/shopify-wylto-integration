@@ -12,8 +12,9 @@
  * ============================================================================
  */
 
-import { getStoreByShopDomain } from "./store.server";
-
+/**
+ * Wylto API Configuration
+ */
 const WYLTO_API_BASE_URL = process.env.WYLTO_API_BASE_URL || "https://server.wylto.com";
 const WYLTO_API_TOKEN = process.env.WYLTO_API_TOKEN || "";
 const WYLTO_TEST_MODE = process.env.WYLTO_TEST_MODE === "true" || false; // Enable test mode without token
@@ -279,29 +280,10 @@ export async function connectToApp(shop, wyltoToken) {
  */
 export async function checkConnectionStatus(shop) {
   // Test mode: Return mock status without actual API call
-  // Returns connected: false initially, but true if store has been "connected" in test mode
   if (WYLTO_TEST_MODE) {
     console.log(`[TEST MODE] checkConnectionStatus called for ${shop}`);
-    
-    // Check if store has been connected (has appId stored from connectToApp)
-    const store = await getStoreByShopDomain(shop);
-    const isConnected = !!(store?.wyltoApiKey && store?.isActive);
-    
-    if (isConnected) {
-      // Store was "connected" via connectToApp in test mode
-      return {
-        connected: true,
-        data: {
-          connected: true,
-          appId: store.wyltoApiKey || "test_app_12345",
-          appName: store.wyltoAccountId || "Test Wylto App",
-          tokenValid: true,
-          testMode: true,
-        },
-      };
-    }
-    
-    // Not connected yet - show connection form
+
+    // In test mode, always return connected: false (merchant must connect via real API)
     return {
       connected: false,
       data: {

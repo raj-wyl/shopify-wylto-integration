@@ -1,58 +1,41 @@
 import { authenticate } from "../shopify.server";
-import { createWebhookLog, updateManyWebhookLogs } from "../webhook.service";
-import db from "../db.server";
 
+/**
+ * Webhook: checkouts/create
+ * Triggered when a customer creates a checkout (potential abandoned cart)
+ * Forwards to Wylto backend for abandoned cart recovery processing
+ */
 export const action = async ({ request }) => {
-  const { shop, topic, payload } = await authenticate.webhook(request);
-
-  console.log(`Received ${topic} webhook for ${shop}`);
-
   try {
-    // Log the webhook using service layer
-    await createWebhookLog(shop, topic, payload, "processing");
+    const { shop, payload, topic } = await authenticate.webhook(request);
 
-    // TODO: Track abandoned cart for recovery
-    // 1. Extract checkout token, customer phone, cart details
-    // 2. Check if checkout is abandoned (not completed)
-    // 3. Create PendingCart record with scheduled recovery time
-    // 4. Schedule WhatsApp recovery message (e.g., 1 hour later)
+    console.log(`[Webhook] ${topic} received for shop: ${shop}`);
+    console.log(`[Webhook] Checkout Token: ${payload.token}, Phone: ${payload.phone || 'N/A'}`);
 
-    console.log(`Checkout created: ${payload.token} for ${shop}`);
+    // Forward to Wylto backend
+    const response = await fetch('https://server.wylto.com/api/shopify/webhooks', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${process.env.WYLTO_API_TOKEN}`
+      },
+      body: JSON.stringify({
+        shop,
+        topic,
+        data: payload
+      })
+    });
 
-    // Create pending cart for potential recovery
-    if (payload.abandoned_checkout_url && payload.phone) {
-      const scheduledFor = new Date();
-      scheduledFor.setHours(scheduledFor.getHours() + 1); // Schedule 1 hour later
-
-      await db.pendingCart.create({
-        data: {
-          shopDomain: shop,
-          checkoutToken: payload.token,
-          customerPhone: payload.phone || "N/A",
-          customerName: payload.customer?.first_name || null,
-          cartUrl: payload.abandoned_checkout_url,
-          cartTotal: payload.total_price || null,
-          itemCount: payload.line_items?.length || 0,
-          scheduledFor,
-          status: "pending",
-        },
-      });
+    if (!response.ok) {
+      console.error(`[Webhook] Forward failed: ${response.status} ${response.statusText}`);
+      // Don't return error to Shopify - they'll retry
+    } else {
+      console.log(`[Webhook] Forwarded successfully to Wylto backend`);
     }
-
-    // Update webhook log status using service layer
-    await updateManyWebhookLogs(
-      shop,
-      { topic, payload: JSON.stringify(payload) },
-      { status: "completed" }
-    );
 
     return new Response(null, { status: 200 });
   } catch (error) {
-    console.error(`Error processing ${topic}:`, error);
-
-    // Log error using service layer
-    await createWebhookLog(shop, topic, payload, "failed", error.message);
-
-    return new Response(null, { status: 500 });
+    console.error(`[Webhook] Error:`, error);
+    return new Response(null, { status: 200 }); // Always return 200 to Shopify
   }
 };

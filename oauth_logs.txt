@@ -1,0 +1,84 @@
+2026-01-07 18:54:57 GET /auth/login?shop=wyl-store-bnglr.myshopify.com 302 - - 2.903 ms
+2026-01-07 18:54:57 GET 302 https://wylto-shopify-266803453994.asia-south1.run.app/auth/login?shop=wyl-store-bnglr.myshopify.com
+2026-01-07 18:54:57 [shopify-app/INFO] Redirecting login request to https://admin.shopify.com/store/wyl-store-bnglr/oauth/install?client_id=ce16a95a48c256efdaf69d4a96f8e725 | {shop: wyl-store-bnglr.myshopify.com}
+2026-01-07 18:54:57 GET /auth/login?shop=wyl-store-bnglr.myshopify.com 302 - - 3.136 ms
+2026-01-07 18:55:56 GET 302 https://wylto-shopify-266803453994.asia-south1.run.app/auth/login?shop=wyl-store-bnglr.myshopify.com
+2026-01-07 18:55:56 [shopify-app/INFO] Redirecting login request to https://admin.shopify.com/store/wyl-store-bnglr/oauth/install?client_id=ce16a95a48c256efdaf69d4a96f8e725 | {shop: wyl-store-bnglr.myshopify.com}
+2026-01-07 18:55:56 GET /auth/login?shop=wyl-store-bnglr.myshopify.com 302 - - 3.903 ms
+2026-01-07 18:55:57 GET 302 https://wylto-shopify-266803453994.asia-south1.run.app/auth/login?shop=wyl-store-bnglr.myshopify.com
+2026-01-07 18:55:57 [shopify-app/INFO] Redirecting login request to https://admin.shopify.com/store/wyl-store-bnglr/oauth/install?client_id=ce16a95a48c256efdaf69d4a96f8e725 | {shop: wyl-store-bnglr.myshopify.com}
+2026-01-07 18:55:57 GET /auth/login?shop=wyl-store-bnglr.myshopify.com 302 - - 4.308 ms
+2026-01-07 19:05:54 GET 200 https://wylto-shopify-266803453994.asia-south1.run.app/
+2026-01-07 19:05:54 GET / 200 - - 19.920 ms
+2026-01-07 19:05:54 GET 206 https://wylto-shopify-266803453994.asia-south1.run.app/favicon.ico
+2026-01-08 01:57:03 GET 200 https://wylto-shopify-266803453994.asia-south1.run.app/
+2026-01-08 01:57:04 > start
+2026-01-08 01:57:04 > react-router-serve ./build/server/index.js
+2026-01-08 01:57:06 [shopify-api/INFO] version 12.2.0, environment React Router
+2026-01-08 01:57:06 [react-router-serve] http://localhost:3000 (http://169.254.9.1:3000)
+2026-01-08 01:57:07 GET / 200 - - 91.106 ms
+2026-01-08 01:57:07 GET 200 https://wylto-shopify-266803453994.asia-south1.run.app/assets/entry.client-DzSvqsVN.js
+2026-01-08 01:57:07 GET 200 https://wylto-shopify-266803453994.asia-south1.run.app/assets/route-Xpdx9QZl.css
+2026-01-08 01:57:07 GET 200 https://wylto-shopify-266803453994.asia-south1.run.app/assets/chunk-WWGJGFF6-wQdeuPHC.js
+2026-01-08 01:57:07 GET 200 https://wylto-shopify-266803453994.asia-south1.run.app/assets/route-DmcOQ5W5.js
+2026-01-08 01:57:07 GET 200 https://wylto-shopify-266803453994.asia-south1.run.app/assets/root-C_nJ8LJN.js
+2026-01-08 01:57:07 GET 200 https://wylto-shopify-266803453994.asia-south1.run.app/favicon.ico
+2026-01-08 01:57:07 GET 200 https://wylto-shopify-266803453994.asia-south1.run.app/__manifest?paths=%2Fauth%2Flogin&version=bcb32c23
+2026-01-08 01:57:07 GET /__manifest?paths=%2Fauth%2Flogin&version=bcb32c23 200 - - 9.928 ms
+2026-01-08 05:08:31 GET 200 https://wylto-shopify-266803453994.asia-south1.run.app/
+2026-01-08 05:08:32 > start
+2026-01-08 05:08:32 > react-router-serve ./build/server/index.js
+2026-01-08 05:08:33 [shopify-api/INFO] version 12.2.0, environment React Router
+2026-01-08 05:08:33 [react-router-serve] http://localhost:3000 (http://169.254.9.1:3000)
+2026-01-08 05:08:33 GET / 200 - - 96.077 ms
+2026-01-08 05:08:33 GET 200 https://wylto-shopify-266803453994.asia-south1.run.app/assets/route-Xpdx9QZl.css
+2026-01-08 05:08:33 GET 200 https://wylto-shopify-266803453994.asia-south1.run.app/assets/root-C_nJ8LJN.js
+2026-01-08 05:08:33 GET 200 https://wylto-shopify-266803453994.asia-south1.run.app/assets/chunk-WWGJGFF6-wQdeuPHC.js
+2026-01-08 05:08:33 GET 200 https://wylto-shopify-266803453994.asia-south1.run.app/assets/route-DmcOQ5W5.js
+2026-01-08 05:08:33 GET 200 https://wylto-shopify-266803453994.asia-south1.run.app/assets/entry.client-DzSvqsVN.js
+2026-01-08 05:08:33 GET 200 https://wylto-shopify-266803453994.asia-south1.run.app/favicon.ico
+2026-01-08 05:08:33 GET 200 https://wylto-shopify-266803453994.asia-south1.run.app/__manifest?paths=%2Fauth%2Flogin&version=bcb32c23
+2026-01-08 05:08:33 GET /__manifest?paths=%2Fauth%2Flogin&version=bcb32c23 200 - - 10.855 ms
+2026-01-08 13:08:58 > start
+2026-01-08 13:08:58 > react-router-serve ./build/server/index.js
+2026-01-08 13:09:00 [shopify-api/INFO] version 12.2.0, environment React Router
+2026-01-08 13:09:00 [react-router-serve] http://localhost:3000 (http://169.254.8.1:3000)
+2026-01-08 13:09:17 GET 302 https://wylto-shopify-266803453994.asia-south1.run.app/auth/login?shop=wyl-store-bnglr.myshopify.com
+2026-01-08 13:09:17 [shopify-app/INFO] Redirecting login request to https://admin.shopify.com/store/wyl-store-bnglr/oauth/install?client_id=ce16a95a48c256efdaf69d4a96f8e725 | {shop: wyl-store-bnglr.myshopify.com}
+2026-01-08 13:09:17 GET /auth/login?shop=wyl-store-bnglr.myshopify.com 302 - - 122.080 ms
+2026-01-08 13:09:18 GET 302 https://wylto-shopify-266803453994.asia-south1.run.app/auth/login?shop=wyl-store-bnglr.myshopify.com
+2026-01-08 13:09:18 [shopify-app/INFO] Redirecting login request to https://admin.shopify.com/store/wyl-store-bnglr/oauth/install?client_id=ce16a95a48c256efdaf69d4a96f8e725 | {shop: wyl-store-bnglr.myshopify.com}
+2026-01-08 13:09:18 GET /auth/login?shop=wyl-store-bnglr.myshopify.com 302 - - 5.702 ms
+2026-01-08 13:10:07 GET 302 https://wylto-shopify-266803453994.asia-south1.run.app/auth/login?shop=wyl-store-bnglr.myshopify.com
+2026-01-08 13:10:07 [shopify-app/INFO] Redirecting login request to https://admin.shopify.com/store/wyl-store-bnglr/oauth/install?client_id=ce16a95a48c256efdaf69d4a96f8e725 | {shop: wyl-store-bnglr.myshopify.com}
+2026-01-08 13:10:07 GET /auth/login?shop=wyl-store-bnglr.myshopify.com 302 - - 2.241 ms
+2026-01-08 13:10:08 GET 302 https://wylto-shopify-266803453994.asia-south1.run.app/auth/login?shop=wyl-store-bnglr.myshopify.com
+2026-01-08 13:10:08 [shopify-app/INFO] Redirecting login request to https://admin.shopify.com/store/wyl-store-bnglr/oauth/install?client_id=ce16a95a48c256efdaf69d4a96f8e725 | {shop: wyl-store-bnglr.myshopify.com}
+2026-01-08 13:10:08 GET /auth/login?shop=wyl-store-bnglr.myshopify.com 302 - - 2.353 ms
+2026-01-08 13:15:07 GET 410 https://wylto-shopify-266803453994.asia-south1.run.app/auth/callback
+2026-01-08 13:15:07 GET /auth/callback 410 - - 11.885 ms
+2026-01-08 13:15:22 GET 410 https://wylto-shopify-266803453994.asia-south1.run.app/auth/shopify/callback
+2026-01-08 13:15:22 GET /auth/shopify/callback 410 - - 3.627 ms
+2026-01-08 13:51:10 GET 200 https://wylto-shopify-266803453994.asia-south1.run.app/
+2026-01-08 13:51:12 > start
+2026-01-08 13:51:12 > react-router-serve ./build/server/index.js
+2026-01-08 13:51:13 [shopify-api/INFO] version 12.2.0, environment React Router
+2026-01-08 13:51:13 [react-router-serve] http://localhost:3000 (http://169.254.8.1:3000)
+2026-01-08 13:51:13 GET / 200 - - 133.368 ms
+2026-01-08 13:51:39 GET 200 https://wylto-shopify-pfcaxtk5da-el.a.run.app/
+2026-01-08 13:51:39 GET / 200 - - 16.771 ms
+2026-01-08 13:51:39 GET 200 https://wylto-shopify-pfcaxtk5da-el.a.run.app/assets/entry.client-DzSvqsVN.js
+2026-01-08 13:51:39 GET 200 https://wylto-shopify-pfcaxtk5da-el.a.run.app/assets/route-DmcOQ5W5.js
+2026-01-08 13:51:39 GET 200 https://wylto-shopify-pfcaxtk5da-el.a.run.app/assets/chunk-WWGJGFF6-wQdeuPHC.js
+2026-01-08 13:51:39 GET 200 https://wylto-shopify-pfcaxtk5da-el.a.run.app/assets/route-Xpdx9QZl.css
+2026-01-08 13:51:39 GET 200 https://wylto-shopify-pfcaxtk5da-el.a.run.app/assets/root-C_nJ8LJN.js
+2026-01-08 13:51:40 GET 200 https://wylto-shopify-pfcaxtk5da-el.a.run.app/favicon.ico
+2026-01-08 13:51:40 GET 200 https://wylto-shopify-pfcaxtk5da-el.a.run.app/__manifest?paths=%2Fauth%2Flogin&version=bcb32c23
+2026-01-08 13:51:40 GET /__manifest?paths=%2Fauth%2Flogin&version=bcb32c23 200 - - 4.516 ms
+2026-01-08 14:20:11 > start
+2026-01-08 14:20:11 > react-router-serve ./build/server/index.js
+2026-01-08 14:20:14 [shopify-api/INFO] version 12.2.0, environment React Router
+2026-01-08 14:20:14 [react-router-serve] http://localhost:3000 (http://169.254.8.1:3000)
+2026-01-08 14:23:07 GET 302 https://wylto-shopify-pfcaxtk5da-el.a.run.app/auth/login?shop=wyl-store-bnglr.myshopify.com
+2026-01-08 14:23:07 [shopify-app/INFO] Redirecting login request to https://admin.shopify.com/store/wyl-store-bnglr/oauth/install?client_id=ce16a95a48c256efdaf69d4a96f8e725 | {shop: wyl-store-bnglr.myshopify.com}
+2026-01-08 14:23:07 GET /auth/login?shop=wyl-store-bnglr.myshopify.com 302 - - 115.713 ms
