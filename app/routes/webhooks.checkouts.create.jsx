@@ -13,7 +13,7 @@ export const action = async ({ request }) => {
     console.log(`[Webhook] Checkout Token: ${payload.token}, Phone: ${payload.phone || 'N/A'}`);
 
     // Forward to Wylto backend
-    const response = await fetch('https://server.wylto.com/api/shopify/webhooks', {
+    const response = await fetch('https://server.wylto.com/api/shopify/webhook', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',

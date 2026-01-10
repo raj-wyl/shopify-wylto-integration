@@ -3,18 +3,39 @@ import { authenticate } from "../shopify.server";
 /**
  * Webhook: app/uninstalled
  * Triggered when the app is uninstalled from a store
- *
- * Note: We use MemorySessionStorage, so sessions are automatically cleared on restart.
- * This webhook is mainly for logging purposes.
+ * Forwards to Wylto backend for cleanup and notifications
  */
 export const action = async ({ request }) => {
-  const { shop, topic } = await authenticate.webhook(request);
+  try {
+    const { shop, payload, topic } = await authenticate.webhook(request);
 
-  console.log(`[Webhook] ${topic} received for ${shop}`);
-  console.log(`[Webhook] App uninstalled from ${shop}`);
+    console.log(`[Webhook] ${topic} received for shop: ${shop}`);
+    console.log(`[Webhook] App uninstalled from ${shop}`);
 
-  // Sessions are stored in memory and will be cleared automatically
-  // No database cleanup needed
+    // Forward to Wylto backend
+    const response = await fetch('https://server.wylto.com/api/shopify/webhook', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${process.env.WYLTO_API_TOKEN}`
+      },
+      body: JSON.stringify({
+        shop,
+        topic,
+        data: payload
+      })
+    });
 
-  return new Response();
+    if (!response.ok) {
+      console.error(`[Webhook] Forward failed: ${response.status} ${response.statusText}`);
+      // Don't return error to Shopify - they'll retry
+    } else {
+      console.log(`[Webhook] Forwarded successfully to Wylto backend`);
+    }
+
+    return new Response(null, { status: 200 });
+  } catch (error) {
+    console.error(`[Webhook] Error:`, error);
+    return new Response(null, { status: 200 }); // Always return 200 to Shopify
+  }
 };
