@@ -1,8 +1,8 @@
 # Learn more about configuring your app at https://shopify.dev/docs/apps/tools/cli/configuration
 
-client_id = "6cb4258be5427f9abebb7d0eb9313437"
+client_id = "9a34c19041cf5f110b539791f7d8a1ee"
 name = "wylto-integration"
-application_url = "https://wylto-shopify-266803453994.asia-south1.run.app"
+application_url = "https://wylto-shopify-pfcaxtk5da-el.a.run.app"
 embedded = true
 
 [build]
@@ -25,7 +25,7 @@ scopes = "read_checkouts,read_customers,read_fulfillments,read_orders,read_produ
 
 [auth]
 redirect_urls = [
-  "https://wylto-shopify-266803453994.asia-south1.run.app/auth/callback",
-  "https://wylto-shopify-266803453994.asia-south1.run.app/auth/shopify/callback",
-  "https://wylto-shopify-266803453994.asia-south1.run.app/api/auth/callback"
+  "https://wylto-shopify-pfcaxtk5da-el.a.run.app/auth/callback",
+  "https://wylto-shopify-pfcaxtk5da-el.a.run.app/auth/shopify/callback",
+  "https://wylto-shopify-pfcaxtk5da-el.a.run.app/api/auth/callback"
 ]
