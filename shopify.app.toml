@@ -1,12 +1,13 @@
 # Learn more about configuring your app at https://shopify.dev/docs/apps/tools/cli/configuration
 
-client_id = "6cb4258be5427f9abebb7d0eb9313437"
-name = "wylto-integration"
+client_id = "9a34c19041cf5f110b539791f7d8a1ee"
+name = "Wylto"
 application_url = "https://wylto-shopify-266803453994.asia-south1.run.app"
 embedded = true
 
 [build]
 automatically_update_urls_on_dev = true
+distribution = "public"
 include_config_on_deploy = true
 
 [webhooks]
