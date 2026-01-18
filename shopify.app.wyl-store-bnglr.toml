@@ -2,7 +2,7 @@
 
 client_id = "ce16a95a48c256efdaf69d4a96f8e725"
 name = "wyl_store_bnglr"
-application_url = "https://wylto-shopify-pfcaxtk5da-el.a.run.app"
+application_url = "https://wylto-shopify-production-pfcaxtk5da-el.a.run.app"
 embedded = true
 
 [build]
@@ -44,7 +44,7 @@ scopes = "read_checkouts,read_customers,read_fulfillments,read_orders,read_produ
 
 [auth]
 redirect_urls = [
-  "https://wylto-shopify-pfcaxtk5da-el.a.run.app/auth/callback",
-  "https://wylto-shopify-pfcaxtk5da-el.a.run.app/auth/shopify/callback",
-  "https://wylto-shopify-pfcaxtk5da-el.a.run.app/api/auth/callback"
+  "https://wylto-shopify-production-pfcaxtk5da-el.a.run.app/auth/callback",
+  "https://wylto-shopify-production-pfcaxtk5da-el.a.run.app/auth/shopify/callback",
+  "https://wylto-shopify-production-pfcaxtk5da-el.a.run.app/api/auth/callback"
 ]
