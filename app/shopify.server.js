@@ -46,6 +46,19 @@ const shopify = shopifyApp({
       deliveryMethod: DeliveryMethod.Http,
       callbackUrl: "/webhooks/checkouts/update",
     },
+    // GDPR Compliance webhooks (mandatory for App Store)
+    "customers/data_request": {
+      deliveryMethod: DeliveryMethod.Http,
+      callbackUrl: "/webhooks/customers/data_request",
+    },
+    "customers/redact": {
+      deliveryMethod: DeliveryMethod.Http,
+      callbackUrl: "/webhooks/customers/redact",
+    },
+    "shop/redact": {
+      deliveryMethod: DeliveryMethod.Http,
+      callbackUrl: "/webhooks/shop/redact",
+    },
   },
   hooks: {
     afterAuth: async ({ session }) => {
