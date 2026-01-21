@@ -44,10 +44,18 @@ api_version = "2026-01"
   topics = [ "checkouts/update" ]
   uri = "/webhooks/checkouts/update"
 
-[webhooks.compliance_topics]
-  customer_data_request = "/webhooks/customers/data_request"
-  customer_redaction = "/webhooks/customers/redact"
-  shop_redaction = "/webhooks/shop/redact"
+  # GDPR Compliance webhooks (mandatory for App Store)
+  [[webhooks.subscriptions]]
+  compliance_topics = [ "customers/data_request" ]
+  uri = "/webhooks/customers/data_request"
+
+  [[webhooks.subscriptions]]
+  compliance_topics = [ "customers/redact" ]
+  uri = "/webhooks/customers/redact"
+
+  [[webhooks.subscriptions]]
+  compliance_topics = [ "shop/redact" ]
+  uri = "/webhooks/shop/redact"
 
 [access_scopes]
 scopes = "read_checkouts,read_customers,read_fulfillments,read_orders,read_products"
