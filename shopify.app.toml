@@ -20,6 +20,11 @@ api_version = "2026-01"
   topics = [ "app/scopes_update" ]
   uri = "/webhooks/app/scopes_update"
 
+[webhooks.compliance_topics]
+  customer_data_request = "/webhooks/customers/data_request"
+  customer_redaction = "/webhooks/customers/redact"
+  shop_redaction = "/webhooks/shop/redact"
+
 [access_scopes]
 scopes = "read_checkouts,read_customers,read_fulfillments,read_orders,read_products"
 
