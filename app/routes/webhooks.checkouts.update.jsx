@@ -35,7 +35,8 @@ export const action = async ({ request }) => {
 
     return new Response(null, { status: 200 });
   } catch (error) {
+    // HMAC validation failed - return 401 as required by Shopify
     console.error(`[Webhook] Error:`, error);
-    return new Response(null, { status: 200 }); // Always return 200 to Shopify
+    return new Response(null, { status: 401 });
   }
 };
