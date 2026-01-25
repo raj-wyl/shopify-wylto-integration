@@ -1,151 +1,397 @@
-# Shopify App Template - React Router
+# Wylto-Shopify Integration
 
-This is a template for building a [Shopify app](https://shopify.dev/docs/apps/getting-started) using [React Router](https://reactrouter.com/).  It was forked from the [Shopify Remix app template](https://github.com/Shopify/shopify-app-template-remix) and converted to React Router.
+> WhatsApp messaging integration for Shopify stores via Wylto platform
 
-Rather than cloning this repo, follow the [Quick Start steps](https://github.com/Shopify/shopify-app-template-react-router#quick-start).
+[![Shopify App](https://img.shields.io/badge/Shopify-App-95bf47)](https://shopify.dev)
+[![React Router](https://img.shields.io/badge/React_Router-7.10-blue)](https://reactrouter.com)
+[![Node.js](https://img.shields.io/badge/Node.js-%3E%3D20.19-green)](https://nodejs.org)
 
-Visit the [`shopify.dev` documentation](https://shopify.dev/docs/api/shopify-app-react-router) for more details on the React Router app package.
+## Overview
 
-## Upgrading from Remix
+Wylto-Shopify Integration is a public Shopify app that connects your Shopify store with Wylto's WhatsApp messaging platform. It enables automated customer notifications for:
 
-If you have an existing Remix app that you want to upgrade to React Router, please follow the [upgrade guide](https://github.com/Shopify/shopify-app-template-react-router/wiki/Upgrading-from-Remix).  Otherwise, please follow the quick start guide below.
+- ✅ **Order Confirmations** - Instant order confirmation via WhatsApp
+- 📦 **Shipping Updates** - Real-time fulfillment and tracking notifications
+- 🛒 **Abandoned Cart Recovery** - Automated reminders for incomplete checkouts
+- 🔄 **Order Updates** - Status changes and modifications
+- ❌ **Cancellation Notices** - Order cancellation notifications
 
-## Quick start
+## Quick Links
 
-### Prerequisites
+- **Production URL:** https://wylto-production-pfcaxtk5da-el.a.run.app
+- **Documentation:** [ARCHITECTURE.md](./ARCHITECTURE.md) | [DEVELOPER_GUIDE.md](./DEVELOPER_GUIDE.md)
+- **Shopify Partner Dashboard:** https://partners.shopify.com
+- **Wylto Dashboard:** https://wylto.com
 
-Before you begin, you'll need the following:
+## Features
 
-1. **Node.js**: [Download and install](https://nodejs.org/en/download/) it if you haven't already.
-2. **Shopify Partner Account**: [Create an account](https://partners.shopify.com/signup) if you don't have one.
-3. **Test Store**: Set up either a [development store](https://help.shopify.com/en/partners/dashboard/development-stores#create-a-development-store) or a [Shopify Plus sandbox store](https://help.shopify.com/en/partners/dashboard/managing-stores/plus-sandbox-store) for testing your app.
-4. **Shopify CLI**: [Download and install](https://shopify.dev/docs/apps/tools/cli/getting-started) it if you haven't already.
-```shell
-npm install -g @shopify/cli@latest
+### Automated Messaging
+- 📱 **5 Message Templates** for different customer touchpoints
+- 🤖 **10 Webhook Handlers** for real-time event processing
+- 🔗 **Seamless Integration** with Shopify's webhook system
+
+### Security & Compliance
+- 🔐 **OAuth 2.0 Authentication** with Shopify
+- ✅ **HMAC Validation** for all webhooks
+- 🛡️ **GDPR Compliance** webhooks for data privacy
+- 🔑 **API Token Authentication** with Wylto backend
+
+### Developer Experience
+- ⚡ **Fast Development** with Vite and HMR
+- 📦 **Serverless Deployment** on Google Cloud Run
+- 🧪 **Test Mode** for development without API access
+- 📊 **Comprehensive Logging** for debugging
+
+## Architecture
+
+```
+┌─────────────────┐
+│ Shopify Store   │
+│  - Orders       │
+│  - Fulfillments │
+│  - Checkouts    │
+└────────┬────────┘
+         │ Webhooks
+         ▼
+┌─────────────────────────┐
+│ Wylto Shopify App       │
+│  - OAuth Handler        │
+│  - Webhook Processors   │
+│  - Connection Manager   │
+└────────┬────────────────┘
+         │ API Calls
+         ▼
+┌─────────────────────────┐
+│ Wylto Backend Server    │
+│  - Message Templates    │
+│  - WhatsApp API         │
+│  - Customer Database    │
+└────────┬────────────────┘
+         │ WhatsApp
+         ▼
+┌─────────────────┐
+│ Customer        │
+│  📱 WhatsApp    │
+└─────────────────┘
 ```
 
-### Setup
+**For detailed architecture diagrams, see [ARCHITECTURE.md](./ARCHITECTURE.md)**
 
-```shell
-shopify app init --template=https://github.com/Shopify/shopify-app-template-react-router
+## Prerequisites
+
+### System Requirements
+- **Node.js** >= 20.19 (or >= 22.12)
+- **npm** >= 9.0
+- **Git**
+
+### Shopify Requirements
+- **Shopify Partner Account** ([Sign up here](https://partners.shopify.com))
+- **App Created** in Partner Dashboard
+- **Test Store** for development
+
+### Wylto Requirements
+- **Wylto Account** with API access
+- **API Token** from Wylto dashboard
+
+## Installation
+
+### 1. Clone Repository
+
+```bash
+git clone <repository-url>
+cd shopify-wylto-integration
 ```
 
-### Local Development
+### 2. Install Dependencies
 
-```shell
-shopify app dev
+```bash
+npm install
 ```
 
-Press P to open the URL to your app. Once you click install, you can start development.
+### 3. Configure Environment
 
-Local development is powered by [the Shopify CLI](https://shopify.dev/docs/apps/tools/cli). It logs into your partners account, connects to an app, provides environment variables, updates remote config, creates a tunnel and provides commands to generate extensions.
+```bash
+# Copy example environment file
+cp .env.example .env
 
-### Authenticating and querying data
-
-To authenticate and query data you can use the `shopify` const that is exported from `/app/shopify.server.js`:
-
-```js
-export async function loader({ request }) {
-  const { admin } = await shopify.authenticate.admin(request);
-
-  const response = await admin.graphql(`
-    {
-      products(first: 25) {
-        nodes {
-          title
-          description
-        }
-      }
-    }`);
-
-  const {
-    data: {
-      products: { nodes },
-    },
-  } = await response.json();
-
-  return nodes;
-}
+# Edit .env with your credentials
+nano .env
 ```
 
-This template comes pre-configured with examples of:
+Required environment variables:
 
-1. Setting up your Shopify app in [/app/shopify.server.ts](https://github.com/Shopify/shopify-app-template-react-router/blob/main/app/shopify.server.ts)
-2. Querying data using Graphql. Please see: [/app/routes/app.\_index.tsx](https://github.com/Shopify/shopify-app-template-react-router/blob/main/app/routes/app._index.tsx).
-3. Responding to webhooks. Please see [/app/routes/webhooks.tsx](https://github.com/Shopify/shopify-app-template-react-router/blob/main/app/routes/webhooks.app.uninstalled.tsx).
+```bash
+# Shopify App Credentials (from Partner Dashboard)
+SHOPIFY_API_KEY=your_api_key_here
+SHOPIFY_API_SECRET=your_api_secret_here
+SHOPIFY_APP_URL=https://your-app-url.com
 
-Please read the [documentation for @shopify/shopify-app-react-router](https://shopify.dev/docs/api/shopify-app-react-router) to see what other API's are available.
+# Wylto API Configuration
+WYLTO_API_TOKEN=your_wylto_token_here
+WYLTO_API_BASE_URL=https://server.wylto.com  # Optional
 
-## Shopify Dev MCP
+# App Permissions (comma-separated, no spaces)
+SCOPES=read_checkouts,read_customers,read_fulfillments,read_orders,read_products
 
-This template is configured with the Shopify Dev MCP. This instructs [Cursor](https://cursor.com/), [GitHub Copilot](https://github.com/features/copilot) and [Claude Code](https://claude.com/product/claude-code) and [Google Gemini CLI](https://github.com/google-gemini/gemini-cli) to use the Shopify Dev MCP.  
+# Optional: Development Settings
+WYLTO_TEST_MODE=false  # Set to "true" for testing
+PORT=3000
+```
 
-For more information on the Shopify Dev MCP please read [the  documentation](https://shopify.dev/docs/apps/build/devmcp).
+### 4. Start Development Server
+
+```bash
+npm run dev
+```
+
+Server will start at `http://localhost:3000`
+
+## Configuration
+
+### Shopify App Setup
+
+1. **Create App** in [Shopify Partner Dashboard](https://partners.shopify.com)
+   - Click "Apps" → "Create app"
+   - Choose "Public app"
+   - Enter app name: "Wylto"
+
+2. **Configure App URLs**
+   - App URL: `https://your-app-url.com`
+   - Allowed redirection URLs:
+     - `https://your-app-url.com/auth/callback`
+     - `https://your-app-url.com/auth/shopify/callback`
+     - `https://your-app-url.com/api/auth/callback`
+
+3. **Set API Scopes**
+   ```
+   read_checkouts
+   read_customers
+   read_fulfillments
+   read_orders
+   read_products
+   ```
+
+4. **Copy Credentials**
+   - Copy "API key" to `SHOPIFY_API_KEY`
+   - Copy "API secret key" to `SHOPIFY_API_SECRET`
+
+### Wylto Dashboard Setup
+
+1. **Login to Wylto** at [https://wylto.com](https://wylto.com)
+2. Navigate to **Settings** → **Integrations**
+3. Generate **Shopify API Token**
+4. Copy token to `WYLTO_API_TOKEN`
+
+## Usage
+
+### For Merchants
+
+#### 1. Install App on Shopify Store
+
+1. Visit app installation URL (provided by Shopify Partner Dashboard)
+2. Click "Install app"
+3. Review and approve permissions
+4. Redirected to app home page
+
+#### 2. Connect Wylto Account
+
+1. Login to Wylto dashboard
+2. Copy your Shopify integration token
+3. In Shopify admin, open Wylto app
+4. Paste token and click "Connect"
+5. Verify connection success
+
+#### 3. Automatic Notifications
+
+Once connected, customers automatically receive WhatsApp messages for:
+- New orders
+- Order updates
+- Shipment tracking
+- Abandoned cart reminders
+
+### For Developers
+
+#### Running Locally
+
+```bash
+# Development with hot reload
+npm run dev
+
+# Build for production
+npm run build
+
+# Run production build locally
+npm run start
+```
+
+#### Testing Webhooks
+
+```bash
+# Install Shopify CLI
+npm install -g @shopify/cli
+
+# Trigger test webhooks
+shopify app webhook trigger --topic=orders/create
+shopify app webhook trigger --topic=fulfillments/create
+shopify app webhook trigger --topic=checkouts/create
+```
+
+#### Using Test Mode
+
+For development without Wylto API access:
+
+```bash
+# Enable test mode in .env
+WYLTO_TEST_MODE=true
+
+# Restart server
+npm run dev
+```
+
+Test mode returns mock responses for all Wylto API calls.
+
+## Project Structure
+
+```
+shopify-wylto-integration/
+├── app/
+│   ├── routes/                   # Route handlers
+│   │   ├── auth.login/          # Login page
+│   │   ├── auth.$.jsx           # OAuth callback
+│   │   ├── app._index.jsx       # Home page
+│   │   ├── app.how-to-use.jsx   # Documentation
+│   │   └── webhooks.*.jsx       # 10 webhook handlers
+│   │
+│   ├── shopify.server.js        # Shopify configuration
+│   ├── wylto-connection.server.js # Wylto API client
+│   ├── wylto.server.js          # Message templates
+│   ├── entry.server.jsx         # Server entry
+│   └── root.jsx                 # Root component
+│
+├── public/                       # Static assets
+├── build/                        # Build output
+│
+├── shopify.app.toml             # App manifest
+├── vite.config.js               # Build config
+├── package.json                 # Dependencies
+└── .env                         # Environment variables
+```
+
+### Key Files Explained
+
+| File | Purpose | Key Functions |
+|------|---------|---------------|
+| `shopify.server.js:19` | Shopify app config | `registerWebhooks()`, `afterAuth` hook |
+| `wylto-connection.server.js:1` | Wylto API client | `saveAccessToken()`, `connectToApp()`, `checkConnectionStatus()` |
+| `wylto.server.js:1` | Message templates | `renderTemplate()`, `getTemplateInfo()` |
+| `app._index.jsx:15` | Home page | Connection UI and form handling |
+| `webhooks.*.jsx` | Webhook handlers | Forward events to Wylto |
 
 ## Deployment
 
-### Application Storage
+### Google Cloud Run (Current)
 
-This template uses [Prisma](https://www.prisma.io/) to store session data, by default using an [SQLite](https://www.sqlite.org/index.html) database.
-The database is defined as a Prisma schema in `prisma/schema.prisma`.
-
-This use of SQLite works in production if your app runs as a single instance.
-The database that works best for you depends on the data your app needs and how it is queried.
-Here’s a short list of databases providers that provide a free tier to get started:
-
-| Database   | Type             | Hosters                                                                                                                                                                                                                               |
-| ---------- | ---------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| MySQL      | SQL              | [Digital Ocean](https://www.digitalocean.com/products/managed-databases-mysql), [Planet Scale](https://planetscale.com/), [Amazon Aurora](https://aws.amazon.com/rds/aurora/), [Google Cloud SQL](https://cloud.google.com/sql/docs/mysql) |
-| PostgreSQL | SQL              | [Digital Ocean](https://www.digitalocean.com/products/managed-databases-postgresql), [Amazon Aurora](https://aws.amazon.com/rds/aurora/), [Google Cloud SQL](https://cloud.google.com/sql/docs/postgres)                                   |
-| Redis      | Key-value        | [Digital Ocean](https://www.digitalocean.com/products/managed-databases-redis), [Amazon MemoryDB](https://aws.amazon.com/memorydb/)                                                                                                        |
-| MongoDB    | NoSQL / Document | [Digital Ocean](https://www.digitalocean.com/products/managed-databases-mongodb), [MongoDB Atlas](https://www.mongodb.com/atlas/database)                                                                                                  |
-
-To use one of these, you can use a different [datasource provider](https://www.prisma.io/docs/reference/api-reference/prisma-schema-reference#datasource) in your `schema.prisma` file, or a different [SessionStorage adapter package](https://github.com/Shopify/shopify-api-js/blob/main/packages/shopify-api/docs/guides/session-storage.md).
-
-### Build
-
-Build the app by running the command below with the package manager of your choice:
-
-Using yarn:
-
-```shell
-yarn build
-```
-
-Using npm:
-
-```shell
+```bash
+# 1. Build application
 npm run build
+
+# 2. Deploy via Shopify CLI
+npm run deploy
+
+# 3. Verify deployment
+# Visit: https://wylto-production-pfcaxtk5da-el.a.run.app
 ```
 
-Using pnpm:
+### Manual Deployment
 
-```shell
-pnpm run build
+```bash
+# 1. Build Docker image
+docker build -t wylto-shopify-app .
+
+# 2. Tag image
+docker tag wylto-shopify-app gcr.io/PROJECT_ID/wylto-shopify-app
+
+# 3. Push to Google Container Registry
+docker push gcr.io/PROJECT_ID/wylto-shopify-app
+
+# 4. Deploy to Cloud Run
+gcloud run deploy wylto-production \
+  --image gcr.io/PROJECT_ID/wylto-shopify-app \
+  --platform managed \
+  --region us-east1 \
+  --allow-unauthenticated
 ```
 
-## Hosting
+### Environment Variables (Production)
 
-When you're ready to set up your app in production, you can follow [our deployment documentation](https://shopify.dev/docs/apps/launch/deployment) to host it externally. From there, you have a few options:
+Set in Cloud Run console:
+- `SHOPIFY_API_KEY`
+- `SHOPIFY_API_SECRET`
+- `SHOPIFY_APP_URL`
+- `WYLTO_API_TOKEN`
+- `SCOPES`
 
-- [Google Cloud Run](https://shopify.dev/docs/apps/launch/deployment/deploy-to-google-cloud-run): This tutorial is written specifically for this example repo, and is compatible with the extended steps included in the subsequent [**Build your app**](tutorial) in the **Getting started** docs. It is the most detailed tutorial for taking a React Router-based Shopify app and deploying it to production. It includes configuring permissions and secrets, setting up a production database, and even hosting your apps behind a load balancer across multiple regions. 
-- [Fly.io](https://fly.io/docs/js/shopify/): Leverages the Fly.io CLI to quickly launch Shopify apps to a single machine. 
-- [Render](https://render.com/docs/deploy-shopify-app): This tutorial guides you through using Docker to deploy and install apps on a Dev store. 
-- [Manual deployment guide](https://shopify.dev/docs/apps/launch/deployment/deploy-to-hosting-service): This resource provides general guidance on the requirements of deployment including environment variables, secrets, and persistent data. 
+## Documentation
 
-When you reach the step for [setting up environment variables](https://shopify.dev/docs/apps/deployment/web#set-env-vars), you also need to set the variable `NODE_ENV=production`.
+### For Developers
 
-## Gotchas / Troubleshooting
+- **[ARCHITECTURE.md](./ARCHITECTURE.md)** - Technical architecture, data flow diagrams, and system design
+- **[DEVELOPER_GUIDE.md](./DEVELOPER_GUIDE.md)** - Detailed code walkthrough for junior developers
 
-### Database tables don't exist
+### Quick Reference
 
-If you get an error like:
+#### Webhook Topics
 
-```
-The table `main.Session` does not exist in the current database.
-```
+| Topic | When Triggered | Template Used |
+|-------|----------------|---------------|
+| `orders/create` | New order placed | ORDER_CREATED |
+| `orders/updated` | Order status changed | ORDER_UPDATED |
+| `fulfillments/create` | Order shipped | ORDER_FULFILLED |
+| `checkouts/create` | Checkout started | CART_RECOVERY |
+| `checkouts/update` | Checkout updated | CART_RECOVERY |
 
-Create the database for Prisma. Run the `setup` script in `package.json` using `npm`, `yarn` or `pnpm`.
+#### API Endpoints (Wylto Backend)
+
+| Endpoint | Method | Purpose | Called From |
+|----------|--------|---------|-------------|
+| `/api/shopify/connect` | POST | Save access token | OAuth flow |
+| `/api/shopify/applink` | POST | Link store to account | Home page |
+| `/api/shopify/status` | GET | Check connection | Home page |
+| `/api/shopify/webhook` | POST | Process webhook | Webhook handlers |
+
+## Troubleshooting
+
+### Common Issues
+
+#### Issue: OAuth fails with "Invalid credentials"
+
+**Solution:**
+1. Verify `SHOPIFY_API_KEY` and `SHOPIFY_API_SECRET` match Partner Dashboard
+2. Check `SHOPIFY_APP_URL` matches configured app URL
+3. Ensure redirect URLs are configured correctly
+
+#### Issue: Webhooks return 401 Unauthorized
+
+**Solution:**
+1. HMAC validation failing - check `SHOPIFY_API_SECRET`
+2. Reinstall app to re-register webhooks
+3. Verify webhook URLs in Partner Dashboard
+
+#### Issue: "Store not found" when connecting
+
+**Solution:**
+1. Check `afterAuth` hook logs for errors
+2. Verify `WYLTO_API_TOKEN` is correct
+3. Ensure access token was saved during OAuth
+4. Try reinstalling the app
+
+#### Issue: Messages not sending
+
+**Solution:**
+1. Verify store is connected (check home page)
+2. Check Wylto dashboard for active subscription
+3. Verify customer phone numbers are valid
+4. Check Cloud Run logs for errors
 
 ### Navigating/redirecting breaks an embedded app
 
@@ -222,22 +468,76 @@ PRISMA_CLIENT_ENGINE_TYPE=binary
 
 This forces Prisma to use the binary engine mode, which runs the query engine as a separate process and can work via emulation on Windows ARM64.
 
-## Resources
+### Debug Logging
 
-React Router:
+**Development:**
+```bash
+# Console shows all logs
+npm run dev
+```
 
-- [React Router docs](https://reactrouter.com/home)
+**Production (Cloud Run):**
+```bash
+# View logs in Google Cloud Console
+# Cloud Run → wylto-production → Logs
+# Filter: severity >= INFO
+```
 
-Shopify:
+### Getting Help
 
-- [Intro to Shopify apps](https://shopify.dev/docs/apps/getting-started)
-- [Shopify App React Router docs](https://shopify.dev/docs/api/shopify-app-react-router)
-- [Shopify CLI](https://shopify.dev/docs/apps/tools/cli)
-- [Shopify App Bridge](https://shopify.dev/docs/api/app-bridge-library).
-- [Polaris Web Components](https://shopify.dev/docs/api/app-home/polaris-web-components).
-- [App extensions](https://shopify.dev/docs/apps/app-extensions/list)
-- [Shopify Functions](https://shopify.dev/docs/api/functions)
+- **Issues:** [GitHub Issues](https://github.com/your-org/shopify-wylto-integration/issues)
+- **Shopify Support:** [Shopify Community](https://community.shopify.com)
+- **Wylto Support:** support@wylto.com
 
-Internationalization:
+## Contributing
 
-- [Internationalizing your app](https://shopify.dev/docs/apps/best-practices/internationalization/getting-started)
+We welcome contributions! Please follow these guidelines:
+
+### Development Workflow
+
+1. **Fork** the repository
+2. **Create** a feature branch: `git checkout -b feature/my-feature`
+3. **Make** your changes
+4. **Test** locally: `npm run dev`
+5. **Commit** with clear messages: `git commit -m "Add: New feature description"`
+6. **Push** to your fork: `git push origin feature/my-feature`
+7. **Submit** a pull request
+
+### Commit Message Format
+
+```
+Type: Brief description
+
+- Detailed change 1
+- Detailed change 2
+
+Closes #issue-number
+```
+
+**Types:**
+- `Add:` New feature
+- `Fix:` Bug fix
+- `Update:` Enhancement to existing feature
+- `Docs:` Documentation changes
+- `Refactor:` Code restructuring
+- `Test:` Testing additions
+
+## License
+
+Copyright © 2026 Wylto. All rights reserved.
+
+This software is proprietary and confidential. Unauthorized copying, distribution, or use is strictly prohibited.
+
+---
+
+## Support
+
+For technical support, please contact:
+- **Email:** support@wylto.com
+- **GitHub Issues:** [Report a bug](https://github.com/your-org/shopify-wylto-integration/issues)
+
+---
+
+**Version:** 1.0.0
+**Last Updated:** 2026-01-25
+**Maintained By:** Wylto Development Team
