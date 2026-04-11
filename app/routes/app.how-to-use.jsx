@@ -62,7 +62,7 @@ export default function HowToUse() {
                   </s-paragraph>
                   <s-unordered-list>
                     <s-list-item>
-                      Get your Wylto app token from your Wylto Dashboard → Apps → Your App → Settings
+                      Get your Wylto app token from your Wylto Dashboard → Settings → API Settings
                     </s-list-item>
                     <s-list-item>
                       Enter the token on the Home page and click "Connect Store"
@@ -111,27 +111,32 @@ export default function HowToUse() {
           <s-box padding="base" borderWidth="base" borderRadius="base" background="subdued">
             <s-stack direction="block" gap="tight">
               <s-text style={{ fontSize: "1.25rem", fontWeight: "bold" }}>
-                Step 3: View Analytics
+                Step 3: Monitor via Wylto Dashboard
               </s-text>
               <s-paragraph>
-                Monitor your WhatsApp message performance:
+                Track your WhatsApp message performance directly in your Wylto account:
               </s-paragraph>
               <s-unordered-list>
                 <s-list-item>
-                  Go to <strong>Data Analytics</strong> to see message statistics
+                  Log in to your Wylto Dashboard to view message delivery reports
                 </s-list-item>
                 <s-list-item>
-                  View success rates, message types, and recent activity
+                  See success rates, message types, and recent activity
                 </s-list-item>
                 <s-list-item>
-                  Track webhook processing and cart recovery metrics
+                  Manage WhatsApp templates and automation rules from the Wylto Dashboard
                 </s-list-item>
               </s-unordered-list>
-              <s-link href="/app/analytics">
-                <s-button variant="secondary" marginBlockStart="base">
-                  View Analytics →
+              <a
+                href="https://wylto.com"
+                target="_blank"
+                rel="noopener noreferrer"
+                style={{ textDecoration: "none", display: "inline-block", marginTop: "0.5rem" }}
+              >
+                <s-button variant="secondary">
+                  Open Wylto Dashboard →
                 </s-button>
-              </s-link>
+              </a>
             </s-stack>
           </s-box>
         </s-stack>
@@ -183,7 +188,7 @@ export default function HowToUse() {
             <s-stack direction="block" gap="tight">
               <s-text style={{ fontWeight: "bold" }}>3. Message Delivery</s-text>
               <s-text tone="subdued">
-                Messages are sent via WhatsApp Business API and logged in the analytics dashboard.
+                Messages are sent via WhatsApp Business API and delivered to your customers.
               </s-text>
             </s-stack>
           </s-box>
@@ -202,7 +207,7 @@ export default function HowToUse() {
               <s-unordered-list>
                 <s-list-item>Verify your Wylto account is connected (check Home page)</s-list-item>
                 <s-list-item>Ensure customer phone numbers are available in orders</s-list-item>
-                <s-list-item>Check Data Analytics for error messages</s-list-item>
+                <s-list-item>Check your Wylto Dashboard for delivery status and error details</s-list-item>
               </s-unordered-list>
             </s-stack>
           </s-box>
