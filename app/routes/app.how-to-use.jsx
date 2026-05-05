@@ -111,20 +111,20 @@ export default function HowToUse() {
           <s-box padding="base" borderWidth="base" borderRadius="base" background="subdued">
             <s-stack direction="block" gap="tight">
               <s-text style={{ fontSize: "1.25rem", fontWeight: "bold" }}>
-                Step 3: Monitor via Wylto Dashboard
+                Step 3: Manage WhatsApp via Wylto Dashboard
               </s-text>
               <s-paragraph>
-                Track your WhatsApp message performance directly in your Wylto account:
+                Once your store is connected, all WhatsApp automation is managed from your Wylto Dashboard at app.wylto.com:
               </s-paragraph>
               <s-unordered-list>
                 <s-list-item>
-                  Log in to your Wylto Dashboard to view message delivery reports
+                  Configure WhatsApp message templates via Whatsapp → Templates &amp; Flows
                 </s-list-item>
                 <s-list-item>
-                  See success rates, message types, and recent activity
+                  Build automation flows using Bot Builder
                 </s-list-item>
                 <s-list-item>
-                  Manage WhatsApp templates and automation rules from the Wylto Dashboard
+                  This Shopify app&apos;s role is complete after the store connection is established
                 </s-list-item>
               </s-unordered-list>
               <a

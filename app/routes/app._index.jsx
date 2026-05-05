@@ -199,7 +199,7 @@ export default function WyltoConnection() {
               Wylto App Token
             </s-label>
             <s-text tone="subdued" style={{ display: "block", marginTop: "0", marginBottom: "16px" }}>
-              Find this in your Wylto Dashboard → Apps → Your App → Settings.
+              Find this in your Wylto Dashboard → Settings → API.
             </s-text>
             <input
               id="wyltoToken"
