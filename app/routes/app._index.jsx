@@ -132,7 +132,7 @@ export default function WyltoConnection() {
       // Reload page data after successful connection
       if (actionData.message?.includes("connected")) {
         setTimeout(() => {
-          window.location.reload();
+          fetcher.load("/app");
         }, 1000);
       }
     } else if (actionData?.error) {

@@ -64,13 +64,6 @@ const shopify = shopifyApp({
     afterAuth: async ({ session }) => {
       console.log(`[afterAuth] Starting for shop: ${session.shop}`);
 
-      try {
-        const webhookRegistrationResult = await shopify.registerWebhooks({ session });
-        console.log(`[afterAuth] Webhook registration result:`, JSON.stringify(webhookRegistrationResult, null, 2));
-      } catch (error) {
-        console.error(`[afterAuth] Webhook registration failed:`, error);
-      }
-
       // Save Shopify access token to Wylto after OAuth installation
       try {
         const result = await saveAccessToken(session.shop, session.accessToken);
