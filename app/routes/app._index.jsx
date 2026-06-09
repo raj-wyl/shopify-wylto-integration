@@ -3,7 +3,7 @@ import { useFetcher, useLoaderData, useNavigate } from "react-router";
 import { useAppBridge } from "@shopify/app-bridge-react";
 import { boundary } from "@shopify/shopify-app-react-router/server";
 import { authenticate } from "../shopify.server";
-import { connectToApp, checkConnectionStatus, saveAccessToken } from "../wylto-connection.server";
+import { connectToApp, checkConnectionStatus, saveAccessToken, disconnectFromApp } from "../wylto-connection.server";
 
 /**
  * App Home Page - Wylto Account Connection
@@ -108,6 +108,30 @@ export const action = async ({ request }) => {
     }
   }
 
+  // Disconnect action - un-link store from Wylto account (keeps app installed)
+  if (actionType === "disconnect") {
+    try {
+      const result = await disconnectFromApp(shopDomain);
+
+      if (!result.success) {
+        return {
+          success: false,
+          error: result.error || "Failed to disconnect from Wylto.",
+        };
+      }
+
+      return {
+        success: true,
+        message: "Store disconnected from Wylto successfully!",
+      };
+    } catch (error) {
+      return {
+        success: false,
+        error: error.message || "Failed to disconnect from Wylto.",
+      };
+    }
+  }
+
   return {
     success: false,
     error: "Invalid action.",
@@ -129,8 +153,10 @@ export default function WyltoConnection() {
   useEffect(() => {
     if (actionData?.success) {
       shopify.toast.show(actionData.message || "Settings saved successfully!");
-      // Reload page data after successful connection
-      if (actionData.message?.includes("connected")) {
+      // Reload page data after a successful connect or disconnect so the
+      // loader re-runs and the UI reflects the new connection state.
+      const msg = actionData.message?.toLowerCase() || "";
+      if (msg.includes("connected") || msg.includes("disconnected")) {
         setTimeout(() => {
           fetcher.load("/app");
         }, 1000);
@@ -179,6 +205,30 @@ export default function WyltoConnection() {
           <s-paragraph marginBlockStart="base">
             Your WhatsApp messages will be sent automatically for orders, fulfillments, and cart recovery.
         </s-paragraph>
+
+          {actionData?.error && (
+            <s-box
+              padding="base"
+              borderWidth="base"
+              borderRadius="base"
+              background="critical-subdued"
+              marginBlockStart="base"
+            >
+              <s-text tone="critical">{actionData.error}</s-text>
+            </s-box>
+          )}
+
+          <s-stack direction="inline" gap="base" marginBlockStart="base">
+            <s-button
+              onClick={(e) => handleSubmit(e, "disconnect")}
+              disabled={isLoading}
+              loading={isLoading && actionType === "disconnect"}
+              variant="secondary"
+              tone="critical"
+            >
+              Disconnect
+            </s-button>
+          </s-stack>
       </s-section>
       </s-page>
     );
