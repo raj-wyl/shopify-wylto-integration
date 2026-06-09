@@ -10,7 +10,7 @@ export const action = async ({ request }) => {
     const { shop, payload, topic } = await authenticate.webhook(request);
 
     console.log(`[Webhook] ${topic} received for shop: ${shop}`);
-    console.log(`[Webhook] Order ID: ${payload.id}, Financial Status: ${payload.financial_status}`);
+    console.log(`[Webhook] Order ID: ${payload.id}, Financial Status: ${payload.financial_status}, Cancelled At: ${payload.cancelled_at || 'N/A'}, Cancel Reason: ${payload.cancel_reason || 'N/A'}`);
 
     // Forward to Wylto backend
     const response = await fetch('https://server.wylto.com/api/shopify/webhook', {
