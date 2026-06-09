@@ -1,16 +1,16 @@
 import { authenticate } from "../shopify.server";
 
 /**
- * Webhook: orders/updated
- * Triggered when an order is updated (status change, cancellation, etc.)
- * Forwards to Wylto backend for processing and WhatsApp notifications
+ * Webhook: fulfillments/update
+ * Triggered by Shopify when carrier tracking status changes (in_transit, out_for_delivery, delivered, etc.)
+ * Forwards to Wylto backend to trigger inTransit, outForDelivery, delivered workflow keys
  */
 export const action = async ({ request }) => {
   try {
     const { shop, payload, topic } = await authenticate.webhook(request);
 
     console.log(`[Webhook] ${topic} received for shop: ${shop}`);
-    console.log(`[Webhook] Order ID: ${payload.id}, Financial Status: ${payload.financial_status}, Cancelled At: ${payload.cancelled_at || 'N/A'}, Cancel Reason: ${payload.cancel_reason || 'N/A'}`);
+    console.log(`[Webhook] Fulfillment ID: ${payload.id}, Shipment Status: ${payload.shipment_status || 'N/A'}`);
 
     // Forward to Wylto backend
     const response = await fetch('https://server.wylto.com/api/shopify/webhook', {
@@ -28,14 +28,12 @@ export const action = async ({ request }) => {
 
     if (!response.ok) {
       console.error(`[Webhook] Forward failed: ${response.status} ${response.statusText}`);
-      // Don't return error to Shopify - they'll retry
     } else {
       console.log(`[Webhook] Forwarded successfully to Wylto backend`);
     }
 
     return new Response(null, { status: 200 });
   } catch (error) {
-    // HMAC validation failed - return 401 as required by Shopify
     console.error(`[Webhook] Error:`, error);
     return new Response(null, { status: 401 });
   }
