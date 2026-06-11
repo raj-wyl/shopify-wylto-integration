@@ -11,6 +11,9 @@ export const action = async ({ request }) => {
 
     console.log(`[Webhook] ${topic} received for shop: ${shop}`);
     console.log(`[Webhook] Order ID: ${payload.id}, Financial Status: ${payload.financial_status}, Cancelled At: ${payload.cancelled_at || 'N/A'}, Cancel Reason: ${payload.cancel_reason || 'N/A'}`);
+    if (payload.cancelled_at) {
+      console.log(`[Webhook] FULL_CANCEL_PAYLOAD: ${JSON.stringify(payload)}`);
+    }
 
     // Forward to Wylto backend
     const response = await fetch('https://server.wylto.com/api/shopify/webhook', {
