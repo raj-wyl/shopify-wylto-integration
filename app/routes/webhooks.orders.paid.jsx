@@ -1,17 +1,16 @@
 import { authenticate } from "../shopify.server";
 
 /**
- * Webhook: orders/updated
- * Triggered when an order is updated (status change, cancellation, etc.)
- * Forwards to Wylto backend for processing and WhatsApp notifications
+ * Webhook: orders/paid
+ * Triggered when an order's payment is captured/marked as paid
+ * Forwards to Wylto backend for payment confirmation / receipt messages
  */
 export const action = async ({ request }) => {
   try {
     const { shop, payload, topic } = await authenticate.webhook(request);
 
     console.log(`[Webhook] ${topic} received for shop: ${shop}`);
-    console.log(`[Webhook] Order ID: ${payload.id}, Financial Status: ${payload.financial_status}, Cancelled At: ${payload.cancelled_at || 'N/A'}, Cancel Reason: ${payload.cancel_reason || 'N/A'}`);
-
+    console.log(`[Webhook] Order ID: ${payload.id}, Order Number: ${payload.name}, Financial Status: ${payload.financial_status || 'N/A'}`);
 
     // Forward to Wylto backend
     const response = await fetch('https://server.wylto.com/api/shopify/webhook', {
