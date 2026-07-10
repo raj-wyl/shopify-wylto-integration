@@ -29,3 +29,8 @@ database.sqlite
 # macOS system files
 .DS_Store
 **/.DS_Store
+
+# Local tooling / notes not part of the app
+.claude/
+marketing/
+wylto-learnings/

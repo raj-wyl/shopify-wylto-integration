@@ -1,0 +1,917 @@
+{
+    "openapi": "3.1.0",
+    "info": {
+      "title": "Wylto API",    
+      "version": "v1.0",
+      "description": "API for interacting with Wylto services",
+      "x-logo": {
+        "url": "https://cdn.cmsfly.com/6469b4cdc6475c01091b3091/logov2-WMv8SE.png",
+        "altText": "Wylto"
+      }
+    },
+    "servers": [
+      {
+        "url": "https://server.wylto.com/",
+        "description": "Main production server for Wylto"
+      }
+    ],
+    "schemes": [
+        "https"
+    ],
+    "components": {
+        "securitySchemes": {
+            "bearerAuth": {
+              "type": "https",
+              "scheme": "bearer",
+              "description": "## Authentication\n\nTo authenticate requests, you need to use the Bearer authentication scheme.\n\n1. Obtain your Bearer token from the settings page in your Wylto account.\n2. Include the token in the Authorization header when making requests to the API.\n\nHere's an example of including the Bearer token in the header:\n\n```\nAuthorization: Bearer <your_token_here>\n```\n\nMake sure to replace `<your_token_here>` with your actual token."
+            }
+      },
+      "schemas": {
+        "WhatsappMessage": {
+          "type": "object",
+          "properties": {
+            "context": {
+              "$ref": "#/components/schemas/Context"
+            },
+            "from": {
+              "type": "string"
+            },
+            "id": {
+              "type": "string"
+            },
+            "timestamp": {
+              "type": "string",
+              "format": "date-time"
+            },
+            "type": {
+              "type": "enum",
+              "enum": ["text", "button", "document", "location", "image", "video", "audio", "order", "interactive"]
+            },
+            "text": {
+              "$ref": "#/components/schemas/Text"
+            },
+            "button": {
+              "$ref": "#/components/schemas/Button"
+            },
+            "document": {
+              "$ref": "#/components/schemas/Document"
+            },
+            "location": {
+              "$ref": "#/components/schemas/Location"
+            },
+            "image": {
+              "$ref": "#/components/schemas/Media"
+            },
+            "video": {
+              "$ref": "#/components/schemas/Media"
+            },
+            "audio": {
+              "$ref": "#/components/schemas/Audio"
+            },
+            "order": {
+              "$ref": "#/components/schemas/Order"
+            },
+            "errors": {
+              "type": "array",
+              "items": {
+                "$ref": "#/components/schemas/Error"
+              }
+            },
+            "interactive": {
+              "$ref": "#/components/schemas/Interactive"
+            }
+          }
+        },
+        "Context": {
+          "type": "object",
+          "properties": {
+            "from": {
+              "type": "string"
+            },
+            "id": {
+              "type": "string"
+            }
+          }
+        },
+        "Text": {
+          "type": "object",
+          "properties": {
+            "body": {
+              "type": "string"
+            }
+          }
+        },
+        "Button": {
+          "type": "object",
+          "properties": {
+            "payload": {
+              "type": "string"
+            },
+            "text": {
+              "type": "string"
+            }
+          }
+        },
+        "Document": {
+          "type": "object",
+          "properties": {
+            "caption": {
+              "type": "string"
+            },
+            "fileName": {
+              "type": "string"
+            },
+            "mimeType": {
+              "type": "string"
+            },
+            "sha256": {
+              "type": "string"
+            },
+            "id": {
+              "type": "string"
+            }
+          }
+        },
+        "Location": {
+          "type": "object",
+          "properties": {
+            "latitude": {
+              "type": "number",
+              "format": "double"
+            },
+            "longitude": {
+              "type": "number",
+              "format": "double"
+            },
+            "name": {
+              "type": "string"
+            },
+            "address": {
+              "type": "string"
+            }
+          }
+        },
+        "Media": {
+          "type": "object",
+          "properties": {
+            "caption": {
+              "type": "string"
+            },
+            "mimeType": {
+              "type": "string"
+            },
+            "sha256": {
+              "type": "string"
+            },
+            "id": {
+              "type": "string"
+            }
+          }
+        },
+        "Audio": {
+          "type": "object",
+          "properties": {
+            "caption": {
+              "type": "string"
+            },
+            "mimeType": {
+              "type": "string"
+            },
+            "sha256": {
+              "type": "string"
+            },
+            "id": {
+              "type": "string"
+            },
+            "voice": {
+              "type": "boolean"
+            }
+          }
+        },
+        "Order": {
+          "type": "object",
+          "properties": {
+            "catalogId": {
+              "type": "string"
+            },
+            "productItems": {
+              "type": "array",
+              "items": {
+                "$ref": "#/components/schemas/ProductItem"
+              }
+            }
+          }
+        },
+        "ProductItem": {
+          "type": "object",
+          "properties": {
+            "productRetailerId": {
+              "type": "string"
+            },
+            "itemPrice": {
+              "type": "integer"
+            },
+            "currency": {
+              "type": "string"
+            },
+            "quantity": {
+              "type": "integer"
+            }
+          }
+        },
+        "Error": {
+          "type": "object",
+          "properties": {
+            "code": {
+              "type": "string"
+            },
+            "message": {
+              "type": "string"
+            }
+          }
+        },
+        "Interactive": {
+          "type": "object",
+          "properties": {
+            "type": {
+              "type": "string"
+            },
+            "listReply": {
+              "$ref": "#/components/schemas/ListReply"
+            },
+            "buttonReply": {
+              "$ref": "#/components/schemas/ButtonReply"
+            },
+            "nfmReply": {
+              "$ref": "#/components/schemas/NfmReply"
+            }
+          }
+        },
+        "ListReply": {
+          "type": "object",
+          "properties": {
+            "id": {
+              "type": "string"
+            },
+            "title": {
+              "type": "string"
+            },
+            "description": {
+              "type": "string"
+            }
+          }
+        },
+        "ButtonReply": {
+          "type": "object",
+          "properties": {
+            "id": {
+              "type": "string"
+            },
+            "title": {
+              "type": "string"
+            }
+          }
+        },
+        "NfmReply": {
+          "type": "object",
+          "properties": {
+            "name": {
+              "type": "string"
+            },
+            "body": {
+              "type": "string"
+            },
+            "responseJSON": {
+              "type": "string"
+            }
+          }
+        },
+        "OnNewMessagePayload": {
+          "type": "object",
+          "properties": {
+            "contactId": {
+              "type": "string",
+              "description": "Unique identifier of the contact in wylto."
+            },
+            "clientContactId": {
+              "type": "string",
+              "description": "Unique identifier of the contact in your system."
+            },
+            "conversationId": {
+              "type": "string",
+              "description": "Unique identifier of the conversation in wylto."
+            },
+            "clientMessageId": {
+              "type": "string",
+              "description": "Unique identifier of the message in your system. You need to provide this as part of the request when sending a message."
+            },
+            "message": {
+              "type": "object",
+              "$ref": "#/components/schemas/WhatsappMessage"
+            }
+          }
+        },
+        "EventResponse": {
+          "type": "object",
+          "properties": {
+            "message": {
+              "type": "string",
+              "description": "Confirmation message that the event was received."
+            }
+          }
+        },
+        "SendMessageRequest": {
+          "type": "object",
+          "properties": {
+            "to": {
+              "type": "string",
+              "description": "The phone number to which the message is being sent."
+            },
+            "clientMessageId": {
+              "type": "string",
+              "description": "Unique identifier of the message in your system."
+            },
+            "message": {
+              "type": "object",
+              "properties": {
+                "type": {
+                  "type": "string",
+                  "description": "The type of the message.",
+                  "enum": ["template"]
+                },
+                "template": {
+                  "type": "object",
+                  "properties": {
+                    "templateName": {
+                      "type": "string",
+                      "description": "The name of the template."
+                    },
+                    "language": {
+                      "type": "string",
+                      "description": "The language of the template. Refer https://developers.facebook.com/docs/whatsapp/business-management-api/message-templates/supported-languages/ for the codes"
+                    },
+                    "header": {
+                      "type": "object",
+                      "properties": {
+                        "type": {
+                          "type": "string",
+                          "enum": ["text"],
+                          "description": "The type of the header."
+                        },
+                        "text": {
+                          "type": "string",
+                          "description": "The text content of the header."
+                        }
+                      }
+                    },
+                    "body": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "type": {
+                            "type": "string",
+                            "enum": ["text"],
+                            "description": "The type of the body item."
+                          },
+                          "text": {
+                            "type": "string",
+                            "description": "The text content of the body item."
+                          }
+                        }
+                      }
+                    },
+                    "buttons": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "type": {
+                            "type": "string",
+                            "description": "The type of the button."
+                          },
+                          "payload": {
+                            "type": "string",
+                            "description": "The payload of the button."
+                          },
+                          "index": {
+                            "type": "integer",
+                            "description": "The index of the button."
+                          }
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "SendMessageToContactRequest": {
+          "type": "object",
+          "properties": {
+            "message": {
+              "type": "object",
+              "properties": {
+                "type": {
+                  "type": "string",
+                  "description": "The type of the message.",
+                  "enum": ["template"]
+                },
+                "template": {
+                  "type": "object",
+                  "properties": {
+                    "templateName": {
+                      "type": "string",
+                      "description": "The name of the template."
+                    },
+                    "header": {
+                      "type": "object",
+                      "properties": {
+                        "type": {
+                          "type": "string",
+                          "enum": ["text"],
+                          "description": "The type of the header."
+                        },
+                        "text": {
+                          "type": "string",
+                          "description": "The text content of the header."
+                        }
+                      }
+                    },
+                    "body": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "type": {
+                            "type": "string",
+                            "enum": ["text"],
+                            "description": "The type of the body item."
+                          },
+                          "text": {
+                            "type": "string",
+                            "description": "The text content of the body item."
+                          }
+                        }
+                      }
+                    },
+                    "buttons": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "type": {
+                            "type": "string",
+                            "description": "The type of the button."
+                          },
+                          "payload": {
+                            "type": "string",
+                            "description": "The payload of the button."
+                          },
+                          "index": {
+                            "type": "integer",
+                            "description": "The index of the button."
+                          }
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "ContactRequest": {
+          "type": "object",
+          "properties": {
+            "externalId": {
+              "type": "string",
+              "description": "The unique identifier of the contact in your system."
+            },
+            "name": {
+              "type": "string",
+              "description": "The name of the contact."
+            },
+            "phoneNumber": {
+              "type": "string",
+              "description": "The phone number of the contact."
+            },
+            "email": {
+              "type": "string",
+              "description": "The email address of the contact."
+            }
+          }
+        },
+        "ContactResponse": {
+          "type": "object",
+          "properties": {
+            "id": {
+              "type": "string",
+              "description": "The unique identifier of the contact in Wylto."
+            },
+            "externalId": {
+              "type": "string",
+              "description": "The unique identifier of the contact in your system."
+            },
+            "name": {
+              "type": "string",
+              "description": "The name of the contact."
+            },
+            "phoneNumber": {
+              "type": "string",
+              "description": "The phone number of the contact."
+            },
+            "email": {
+              "type": "string",
+              "description": "The email address of the contact."
+            },
+            "createdAt": {
+              "type": "integer",
+              "description": "Unix timestamp in milli seconds of when the contact was created."
+            },
+            "updatedAt": {
+              "type": "integer",
+              "description": "Unix timestamp in milli seconds of when the contact was last updated."
+            }
+          }
+        }
+      }
+    },
+    "security": [
+      {
+        "bearerAuth": []
+      }
+    ],
+    "securityDefinitions": {
+      "api_key": {
+        "type": "apiKey",
+        "name": "api_key",
+        "in": "header"
+      }
+    },
+    "paths": {
+        "/api/v1/wa/send": {
+            "post": {
+              "tags": ["WhatsApp"],
+              "summary": "Send a message to a phone number",
+              "operationId": "sendMessage",
+              "consumes": [
+                "application/json"
+              ],
+              "produces": [
+                "application/json"
+              ],
+              "requestBody": {
+                "required": true,
+                "content": {
+                  "application/json": {
+                    "schema": {
+                      "$ref": "#/components/schemas/SendMessageRequest"
+                    },
+                    "examples": {
+                      "sendMessageExample": {
+                        "summary": "Example of sending a WhatsApp template",
+                        "value": {
+                          "to": "<phoneNumber>",
+                          "message": {
+                            "type": "template",
+                            "template": {
+                              "templateName": "example_template_name",
+                              "header": {
+                                "type": "text",
+                                "text": "Your header text here"
+                              },
+                              "body": [
+                                {
+                                  "type": "text",
+                                  "text": "Your body text here"
+                                }
+                              ],
+                              "buttons": [
+                                {
+                                  "type": "your_button_type",
+                                  "payload": "your_button_payload",
+                                  "index": 0
+                                }
+                              ]
+                            }
+                          }
+                        }
+                      },
+                      "sendOtpExample": {
+                        "summary": "Example of sending a otp style template message",
+                        "value": {
+                          "to": "<phoneNumber>",
+                          "message": {
+                            "type": "template",
+                            "template": {
+                              "templateName": "<otp_template_name>",
+                              "language": "en",
+                              "body": [
+                                {
+                                  "type": "text",
+                                  "text": "122335"
+                                }
+                              ]
+                            }
+                          }
+                        }
+                      }
+                    
+                    }
+                  }
+                }
+              },
+              "responses": {
+                "200": {
+                  "description": "Message sent successfully.",
+                  "content": {
+                    "application/json": {
+                      "schema": {
+                        "type": "object",
+                        "properties": {
+                          "success": {
+                            "type": "boolean",
+                            "description": "Indicates if the message was sent successfully."
+                          }
+                        }
+                      }
+                    }
+                  }
+                },
+                "400": {
+                  "description": "Bad Request. The request was unacceptable, often due to missing a required parameter."
+                },
+                "401": {
+                  "description": "Unauthorized. The request did not include a correct authorization token."
+                },
+                "500": {
+                  "description": "Internal Server Error. Something went wrong on the server side."
+                }
+              }
+            }
+          },
+        "/api/v1/wa/send/:contactId": {
+            "post": {
+              "tags": ["WhatsApp"],
+              "summary": "Send a message to a contact",
+              "operationId": "sendMessageToContact",
+              "parameters": [
+                {
+                  "name": "contactId",
+                  "in": "path",
+                  "required": true,
+                  "description": "The ID of the contact to whom the message is being sent.",
+                  "schema": {
+                    "type": "string"
+                  }
+                }
+              ],
+              "consumes": [
+                "application/json"
+              ],
+              "produces": [
+                "application/json"
+              ],
+              "requestBody": {
+                "required": true,
+                "content": {
+                  "application/json": {
+                    "schema": {
+                      "$ref": "#/components/schemas/SendMessageToContactRequest"
+                    },
+                    "examples": {
+                      "sendMessageExample": {
+                        "summary": "Example of sending a WhatsApp template",
+                        "value": {
+                          "message": {
+                            "type": "template",
+                            "template": {
+                              "templateName": "example_template_name",
+                              "header": {
+                                "type": "text",
+                                "text": "Your header text here"
+                              },
+                              "body": [
+                                {
+                                  "type": "text",
+                                  "text": "Your body text here"
+                                }
+                              ],
+                              "buttons": [
+                                {
+                                  "type": "your_button_type",
+                                  "payload": "your_button_payload",
+                                  "index": 0
+                                }
+                              ]
+                            }
+                          }
+                        }
+                      },
+                      "sendOtpExample": {
+                        "summary": "Example of sending a otp style template message",
+                        "value": {
+                          "message": {
+                            "type": "template",
+                            "template": {
+                              "templateName": "<otp_template_name>",
+                              "body": [
+                                {
+                                  "type": "text",
+                                  "text": "122335"
+                                }
+                              ]
+                            }
+                          }
+                        }
+                      }
+                    
+                    }
+                  }
+                }
+              },
+              "responses": {
+                "200": {
+                  "description": "Message sent successfully.",
+                  "content": {
+                    "application/json": {
+                      "schema": {
+                        "type": "object",
+                        "properties": {
+                          "success": {
+                            "type": "boolean",
+                            "description": "Indicates if the message was sent successfully."
+                          }
+                        }
+                      }
+                    }
+                  }
+                },
+                "400": {
+                  "description": "Bad Request. The request was unacceptable, often due to missing a required parameter."
+                },
+                "401": {
+                  "description": "Unauthorized. The request did not include a correct authorization token."
+                },
+                "500": {
+                  "description": "Internal Server Error. Something went wrong on the server side."
+                }
+              }
+            }
+          },
+        "/api/v1/contact": {
+            "post": {
+              "tags": ["Contact"],
+              "summary": "Create a new contact",
+              "operationId": "createContact",
+              "requestBody": {
+                "required": true,
+                "content": {
+                  "application/json": {
+                    "schema": {
+                      "$ref": "#/components/schemas/ContactRequest"
+                    }
+                  }
+                }
+              },
+              "responses": {
+                "200": {
+                  "description": "Contact created successfully.",
+                  "content": {
+                    "application/json": {
+                      "schema": {
+                        "$ref": "#/components/schemas/ContactResponse"
+                      }
+                    }
+                  }
+                },
+                "400": {
+                  "description": "Bad Request. The request was unacceptable, often due to missing a required parameter."
+                },
+                "401": {
+                  "description": "Unauthorized. The request did not include a correct authorization token."
+                },
+                "500": {
+                  "description": "Internal Server Error. Something went wrong on the server side."
+                }
+              }
+            }
+          },
+        "/api/v1/contact/:contactId": {
+            "put": {
+              "tags": ["Contact"],
+              "summary": "Update a contact",
+              "operationId": "updateContact",
+              "parameters": [
+                {
+                  "name": "contactId",
+                  "in": "path",
+                  "required": true,
+                  "description": "The ID of the contact to update.",
+                  "schema": {
+                    "type": "string"
+                  }
+                }
+              ],
+              "requestBody": {
+                "required": true,
+                "content": {
+                  "application/json": {
+                    "schema": {
+                      "$ref": "#/components/schemas/ContactResponse"
+                    }
+                  }
+                }
+              },
+              "responses": {
+                "200": {
+                  "description": "Contact updated successfully.",
+                  "content": {
+                    "application/json": {
+                      "schema": {
+                        "$ref": "#/components/schemas/ContactResponse"
+                      }
+                    }
+                  }
+                },
+                "400": {
+                  "description": "Bad Request. The request was unacceptable, often due to missing a required parameter."
+                },
+                "401": {
+                  "description": "Unauthorized. The request did not include a correct authorization token."
+                },
+                "500": {
+                  "description": "Internal Server Error. Something went wrong on the server side."
+                }
+              }
+            },
+            "delete": {
+              "tags": ["Contact"],
+              "summary": "Delete a contact",
+              "operationId": "deleteContact",
+              "parameters": [
+                {
+                  "name": "contactId",
+                  "in": "path",
+                  "required": true,
+                  "description": "The ID of the contact to delete.",
+                  "schema": {
+                    "type": "string"
+                  }
+                }
+              ],
+              "responses": {
+                "200": {
+                  "description": "Contact deleted successfully.",
+                  "content": {
+                    "application/json": {
+                      "schema": {
+                        "type": "object",
+                        "properties": {
+                          "success": {
+                            "type": "boolean",
+                            "description": "Indicates if the contact was deleted successfully."
+                          }
+                        }
+                      }
+                    }
+                  }
+                },
+                "400": {
+                  "description": "Bad Request. The request was unacceptable, often due to missing a required parameter."
+                },
+                "401": {
+                  "description": "Unauthorized. The request did not include a correct authorization token."
+                },
+                "500": {
+                  "description": "Internal Server Error. Something went wrong on the server side."
+                }
+              }
+            }
+          }
+  },
+  "webhooks": {
+    "on new Message": {
+      "post": {
+        "tags": ["Webhooks"],
+        "requestBody": {
+          "description": "When you subscribe for a message webhook,Wylto sends this payload when a new message is received.",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/OnNewMessagePayload"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Your server response after receiving the event"
+          }
+        }
+      }
+    }
+  }
+}
