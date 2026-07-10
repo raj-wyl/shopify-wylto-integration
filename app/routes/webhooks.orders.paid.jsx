@@ -11,6 +11,8 @@ export const action = async ({ request }) => {
 
     console.log(`[Webhook] ${topic} received for shop: ${shop}`);
     console.log(`[Webhook] Order ID: ${payload.id}, Order Number: ${payload.name}, Financial Status: ${payload.financial_status || 'N/A'}`);
+    // TEMP-COD: log payment method to verify COD detection — remove after test
+    console.log(`[Webhook] [TEMP-COD] Gateway: ${payload.gateway || 'N/A'}, Payment Gateway Names: ${JSON.stringify(payload.payment_gateway_names || [])}`);
 
     // Forward to Wylto backend
     const response = await fetch('https://server.wylto.com/api/shopify/webhook', {
