@@ -390,3 +390,122 @@ export async function checkConnectionStatus(shop) {
   }
 }
 
+/**
+ * Disconnects (un-links) a store from its Wylto account.
+ *
+ * This is called from the frontend when the merchant clicks "Disconnect".
+ * It removes the applink between the store and the Wylto account WITHOUT
+ * uninstalling the Shopify app. After a successful call, checkConnectionStatus
+ * should report connected: false.
+ *
+ * @param {string} shop - Shopify shop domain (e.g., "example.myshopify.com")
+ * @returns {Promise<{success: boolean, data?: any, error?: string}>}
+ */
+export async function disconnectFromApp(shop) {
+  // Test mode: Return mock success without actual API call
+  if (WYLTO_TEST_MODE) {
+    console.log(`[TEST MODE] disconnectFromApp called for ${shop}`);
+    return {
+      success: true,
+      data: {
+        message: "Store disconnected successfully (TEST MODE)",
+        shop: shop,
+        testMode: true,
+      },
+    };
+  }
+
+  if (!WYLTO_API_TOKEN) {
+    return { success: false, error: "WYLTO_API_TOKEN not configured" };
+  }
+
+  if (!shop) {
+    return { success: false, error: "Shop is required" };
+  }
+
+  let timeoutId;
+  try {
+    // Create AbortController for timeout handling
+    const controller = new AbortController();
+    timeoutId = setTimeout(() => controller.abort(), WYLTO_API_TIMEOUT);
+
+    const apiUrl = `${WYLTO_API_BASE_URL}/api/shopify/appdisconnect`;
+    console.log(`[Wylto API] Disconnecting store ${shop} from Wylto app`);
+    console.log(`[Wylto API] Calling: ${apiUrl}`);
+
+    const response = await fetch(apiUrl, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${WYLTO_API_TOKEN}`,
+      },
+      body: JSON.stringify({
+        shop: shop,
+      }),
+      signal: controller.signal,
+    });
+
+    clearTimeout(timeoutId);
+    console.log(`[Wylto API] Response status: ${response.status} ${response.statusText}`);
+
+    if (!response.ok) {
+      // Store not linked - treat as already disconnected (idempotent success)
+      if (response.status === 404) {
+        console.log(`[Wylto API] Store ${shop} was not linked (404 - treating as disconnected)`);
+        return { success: true, data: { message: "Store is already disconnected." } };
+      }
+      // Handle authentication errors (401 Unauthorized)
+      if (response.status === 401) {
+        return {
+          success: false,
+          error: "Authentication failed. The WYLTO_API_TOKEN is invalid, expired, or doesn't have the required permissions. Please verify your API token with the Wylto backend team.",
+        };
+      }
+      // Handle timeout/gateway errors
+      if (response.status === 504 || response.status === 503) {
+        return {
+          success: false,
+          error: "Wylto API server is temporarily unavailable. Please try again later.",
+        };
+      }
+      const errorText = await response.text();
+      // Try to parse HTML error pages and extract meaningful message
+      if (errorText.includes("<!DOCTYPE html>") || errorText.includes("<html>")) {
+        return {
+          success: false,
+          error: `Wylto API server error (${response.status}). The server may be down or unreachable.`,
+        };
+      }
+      throw new Error(`HTTP error! status: ${response.status}, message: ${errorText.substring(0, 200)}`);
+    }
+
+    const data = await response.json();
+    console.log("Store disconnected from Wylto:", data);
+    return { success: true, data };
+  } catch (error) {
+    if (timeoutId) clearTimeout(timeoutId);
+    console.error("Failed to disconnect store from Wylto:", error);
+
+    // Handle timeout/abort errors
+    if (error.name === "AbortError" || error.message.includes("timeout")) {
+      return {
+        success: false,
+        error: "Request timed out. The Wylto API server may be slow or unreachable. Please try again later.",
+      };
+    }
+
+    // Handle network errors
+    if (error.message.includes("fetch failed") || error.message.includes("ECONNREFUSED")) {
+      return {
+        success: false,
+        error: "Cannot connect to Wylto API server. Please check your network connection or try again later.",
+      };
+    }
+
+    return {
+      success: false,
+      error: error.message || "Failed to disconnect store",
+    };
+  }
+}
+
