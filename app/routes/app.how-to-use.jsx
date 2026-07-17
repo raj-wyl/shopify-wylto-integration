@@ -128,7 +128,7 @@ export default function HowToUse() {
                 </s-list-item>
               </s-unordered-list>
               <a
-                href="https://wylto.com"
+                href="https://app.wylto.com"
                 target="_blank"
                 rel="noopener noreferrer"
                 style={{ textDecoration: "none", display: "inline-block", marginTop: "0.5rem" }}

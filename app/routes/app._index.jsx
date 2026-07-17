@@ -204,6 +204,7 @@ export default function WyltoConnection() {
           )}
           <s-paragraph marginBlockStart="base">
             Your WhatsApp messages will be sent automatically for orders, fulfillments, and cart recovery.
+            Manage your templates and automation flows in your Wylto Dashboard.
         </s-paragraph>
 
           {actionData?.error && (
@@ -219,6 +220,20 @@ export default function WyltoConnection() {
           )}
 
           <s-stack direction="inline" gap="base" marginBlockStart="base">
+            <a
+              href={
+                loaderData.connectionData?.appId
+                  ? `https://app.wylto.com/app/${loaderData.connectionData.appId}/settings`
+                  : "https://app.wylto.com"
+              }
+              target="_blank"
+              rel="noopener noreferrer"
+              style={{ textDecoration: "none" }}
+            >
+              <s-button variant="primary">
+                Open Wylto Dashboard →
+              </s-button>
+            </a>
             <s-button
               onClick={(e) => handleSubmit(e, "disconnect")}
               disabled={isLoading}
