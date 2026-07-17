@@ -138,6 +138,136 @@ export const action = async ({ request }) => {
   };
 };
 
+const BRAND_DEEP = "#0e3b29";
+const BRAND_ACCENT = "#3cb45a";
+
+const FEATURES = [
+  {
+    icon: "🧾",
+    title: "Order Confirmation",
+    desc: "A WhatsApp confirmation goes out as soon as a customer places an order.",
+  },
+  {
+    icon: "🚚",
+    title: "Shipping & Delivery",
+    desc: "Customers are kept posted when an order is fulfilled, shipped, and delivered.",
+  },
+  {
+    icon: "🛒",
+    title: "Abandoned Cart Recovery",
+    desc: "Shoppers who leave items behind get a friendly nudge with a link back to their cart.",
+  },
+  {
+    icon: "💵",
+    title: "COD Confirmation",
+    desc: "Cash-on-delivery orders are confirmed over WhatsApp before they ship.",
+  },
+];
+
+/* eslint-disable react/prop-types -- local presentational helpers */
+
+/** Wylto wordmark with the brand dot. */
+function Wordmark({ size = 20, color = "#ffffff" }) {
+  return (
+    <span
+      style={{
+        fontWeight: 800,
+        fontSize: size,
+        letterSpacing: "-0.02em",
+        color,
+        whiteSpace: "nowrap",
+      }}
+    >
+      Wylto
+      <span
+        style={{
+          display: "inline-block",
+          width: "0.17em",
+          height: "0.17em",
+          borderRadius: "50%",
+          background: BRAND_ACCENT,
+          marginLeft: "0.05em",
+        }}
+      />
+    </span>
+  );
+}
+
+function Hero({ connected, shopDomain }) {
+  return (
+    <div
+      style={{
+        background: `linear-gradient(135deg, ${BRAND_DEEP} 0%, #14523a 100%)`,
+        borderRadius: "14px",
+        padding: "22px 24px",
+        color: "#ffffff",
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "space-between",
+        gap: "16px",
+        flexWrap: "wrap",
+      }}
+    >
+      <div>
+        <Wordmark size={22} />
+        <div style={{ fontSize: "18px", fontWeight: 700, marginTop: "8px", letterSpacing: "-0.01em" }}>
+          WhatsApp automation for your Shopify store
+        </div>
+        <div style={{ fontSize: "13.5px", opacity: 0.8, marginTop: "4px" }}>
+          {connected
+            ? `Sending automatic order updates for ${shopDomain}`
+            : "Connect your Wylto account to start sending automatic order updates."}
+        </div>
+      </div>
+      <div
+        style={{
+          background: connected ? BRAND_ACCENT : "rgba(255,255,255,0.16)",
+          color: "#ffffff",
+          borderRadius: "999px",
+          padding: "6px 14px",
+          fontSize: "12.5px",
+          fontWeight: 700,
+          whiteSpace: "nowrap",
+        }}
+      >
+        {connected ? "● Connected" : "Not connected"}
+      </div>
+    </div>
+  );
+}
+
+function FeatureGrid() {
+  return (
+    <div
+      style={{
+        display: "grid",
+        gridTemplateColumns: "repeat(auto-fit, minmax(210px, 1fr))",
+        gap: "12px",
+      }}
+    >
+      {FEATURES.map((f) => (
+        <div
+          key={f.title}
+          style={{
+            border: "1px solid #e3e3e3",
+            borderRadius: "12px",
+            padding: "16px",
+            background: "#ffffff",
+          }}
+        >
+          <div style={{ fontSize: "22px", lineHeight: 1, marginBottom: "10px" }}>{f.icon}</div>
+          <div style={{ fontWeight: 650, fontSize: "13.5px", color: "#1a1a1a", marginBottom: "5px" }}>
+            {f.title}
+          </div>
+          <div style={{ fontSize: "12.5px", lineHeight: 1.55, color: "#616161" }}>{f.desc}</div>
+        </div>
+      ))}
+    </div>
+  );
+}
+
+/* eslint-enable react/prop-types */
+
 export default function WyltoConnection() {
   const loaderData = useLoaderData();
   const fetcher = useFetcher();
@@ -178,31 +308,46 @@ export default function WyltoConnection() {
   // If already connected, show success message
   if (loaderData.isConnected) {
   return (
-      <s-page heading="Wylto Connected">
-        <s-section heading="Wylto Integration">
-          <s-box
-            padding="base"
-            borderWidth="base"
-            borderRadius="base"
-            background="success-subdued"
-            marginBlockStart="base"
-          >
-            <s-text tone="success">
-              ✓ Wylto is connected and active for {loaderData.shopDomain}
-            </s-text>
-          </s-box>
+      <s-page heading="Wylto">
+        <s-section>
+          <Hero connected shopDomain={loaderData.shopDomain} />
+        </s-section>
+
+        <s-section heading="Connection">
           {loaderData.connectionData && (
-            <s-box marginBlockStart="base" padding="base" background="subdued" borderRadius="base">
-              <s-text tone="subdued" style={{ fontSize: "0.875rem" }}>
-                App ID: {loaderData.connectionData.appId || "N/A"}
-                {loaderData.connectionData.appName && ` | App: ${loaderData.connectionData.appName}`}
-                {loaderData.connectionData.tokenValid !== undefined && (
-                  ` | Token Valid: ${loaderData.connectionData.tokenValid ? "Yes" : "No"}`
-                )}
-              </s-text>
-            </s-box>
+            <div style={{ display: "flex", flexWrap: "wrap", gap: "8px", marginBottom: "14px" }}>
+              {[
+                ["Account", loaderData.connectionData.appName || "—"],
+                ["App ID", loaderData.connectionData.appId || "—"],
+                [
+                  "Token",
+                  loaderData.connectionData.tokenValid === undefined
+                    ? "—"
+                    : loaderData.connectionData.tokenValid
+                      ? "Valid"
+                      : "Invalid",
+                ],
+              ].map(([label, value]) => (
+                <div
+                  key={label}
+                  style={{
+                    border: "1px solid #e3e3e3",
+                    borderRadius: "10px",
+                    padding: "8px 12px",
+                    background: "#fafafa",
+                  }}
+                >
+                  <div style={{ fontSize: "11px", color: "#8a8a8a", fontWeight: 600, letterSpacing: "0.03em", textTransform: "uppercase" }}>
+                    {label}
+                  </div>
+                  <div style={{ fontSize: "13px", color: "#1a1a1a", fontWeight: 600, marginTop: "2px" }}>
+                    {value}
+                  </div>
+                </div>
+              ))}
+            </div>
           )}
-          <s-paragraph marginBlockStart="base">
+          <s-paragraph>
             Your WhatsApp messages will be sent automatically for orders, fulfillments, and cart recovery.
             Manage your templates and automation flows in your Wylto Dashboard.
         </s-paragraph>
@@ -245,12 +390,20 @@ export default function WyltoConnection() {
             </s-button>
           </s-stack>
       </s-section>
+
+        <s-section heading="What's running">
+          <FeatureGrid />
+        </s-section>
       </s-page>
     );
   }
 
   return (
-    <s-page heading="Connect Your Wylto Account">
+    <s-page heading="Wylto">
+      <s-section>
+        <Hero connected={false} shopDomain={loaderData.shopDomain} />
+      </s-section>
+
       {/* Top Section: Connect Your Wylto Account */}
       <s-section heading="Connect Your Wylto Account">
         <s-paragraph>
@@ -264,7 +417,7 @@ export default function WyltoConnection() {
               Wylto App Token
             </s-label>
             <s-text tone="subdued" style={{ display: "block", marginTop: "0", marginBottom: "16px" }}>
-              Find this in your Wylto Dashboard → Settings → API.
+              Find this in your Wylto Dashboard → Settings → API Settings.
             </s-text>
             <input
               id="wyltoToken"
@@ -280,15 +433,31 @@ export default function WyltoConnection() {
                 padding: "0.875rem 1rem",
                 marginTop: "0",
                 border: "1px solid #d1d5db",
-                borderRadius: "8px",
+                borderRadius: "10px",
                 fontSize: "0.9375rem",
                 color: "#1f2937",
                 outline: "none",
-                transition: "border-color 0.2s"
+                transition: "border-color 0.2s, box-shadow 0.2s"
               }}
-              onFocus={(e) => e.target.style.borderColor = "#16a085"}
-              onBlur={(e) => e.target.style.borderColor = "#d1d5db"}
+              onFocus={(e) => {
+                e.target.style.borderColor = BRAND_ACCENT;
+                e.target.style.boxShadow = `0 0 0 3px ${BRAND_ACCENT}22`;
+              }}
+              onBlur={(e) => {
+                e.target.style.borderColor = "#d1d5db";
+                e.target.style.boxShadow = "none";
+              }}
             />
+            <div style={{ marginTop: "10px" }}>
+              <a
+                href="https://app.wylto.com"
+                target="_blank"
+                rel="noopener noreferrer"
+                style={{ fontSize: "13px", color: "#1f7a52", fontWeight: 600, textDecoration: "none" }}
+              >
+                Get your API token →
+              </a>
+            </div>
           </s-box>
 
           {actionData?.error && (
@@ -341,17 +510,17 @@ export default function WyltoConnection() {
             </s-stack>
       </s-section>
 
+      {/* What you get once connected */}
+      <s-section heading="What you get once connected" marginBlockStart="base">
+        <FeatureGrid />
+      </s-section>
+
       {/* Bottom Section: Don't have a Wylto account? */}
       <s-section heading="Don't have a Wylto account?" marginBlockStart="base">
         <s-paragraph>
-          Wylto provides WhatsApp Business API with automated messaging for Shopify stores. Get started with:
+          Wylto provides the WhatsApp Business API with automated messaging for Shopify stores.
+          Create an account to get your app token and start sending order updates.
         </s-paragraph>
-        <s-unordered-list>
-          <s-list-item>Automated order confirmations</s-list-item>
-          <s-list-item>Real-time shipping notifications</s-list-item>
-          <s-list-item>Abandoned cart recovery</s-list-item>
-          <s-list-item>100% template compliance</s-list-item>
-        </s-unordered-list>
         <a
           href="https://wylto.com"
           target="_blank"
