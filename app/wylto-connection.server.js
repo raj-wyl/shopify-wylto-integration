@@ -591,17 +591,32 @@ export async function getTemplates(shop) {
 /**
  * Creates a WhatsApp template for a shop's Wylto account. The template is
  * submitted to Meta for approval and is not usable until approved.
- * POST /api/shopify/templates?shop=<shop>&connectionId=<connectionId>
+ * POST /api/shopify/templates?shop=<shop>
  *
  * @param {string} shop
- * @param {string} connectionId - WhatsApp connection the template belongs to
  * @param {object} template - { name, language, category, components }
  */
-export async function createTemplate(shop, connectionId, template) {
+export async function createTemplate(shop, template) {
   if (!shop) return { success: false, error: "Shop is required" };
-  if (!connectionId) return { success: false, error: "A WhatsApp connection is required" };
-  const qs = `shop=${encodeURIComponent(shop)}&connectionId=${encodeURIComponent(connectionId)}`;
-  return wyltoRequest(`/api/shopify/templates?${qs}`, { method: "POST", body: template });
+  return wyltoRequest(`/api/shopify/templates?shop=${encodeURIComponent(shop)}`, {
+    method: "POST",
+    body: template,
+  });
+}
+
+/**
+ * Reads the shop's current order-status automations.
+ * GET /api/shopify/automations?shop=<shop>
+ *
+ * @param {string} shop
+ * @returns {Promise<{ success: boolean, automations?: any[], error?: string }>}
+ */
+export async function getAutomations(shop) {
+  if (!shop) return { success: false, error: "Shop is required" };
+  const res = await wyltoRequest(`/api/shopify/automations?shop=${encodeURIComponent(shop)}`);
+  if (!res.success) return { success: false, error: res.error };
+  const automations = Array.isArray(res.data) ? res.data : res.data?.automations ?? [];
+  return { success: true, automations };
 }
 
 /**
@@ -610,7 +625,7 @@ export async function createTemplate(shop, connectionId, template) {
  * POST /api/shopify/automations
  *
  * @param {string} shop
- * @param {Array<{ status: string, enabled: boolean, templateId?: string, connectionId?: string }>} automations
+ * @param {Array<{ status: string, enabled: boolean, templateId?: string }>} automations
  */
 export async function saveAutomations(shop, automations) {
   if (!shop) return { success: false, error: "Shop is required" };
