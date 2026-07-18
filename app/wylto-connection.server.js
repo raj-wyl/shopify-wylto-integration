@@ -509,3 +509,115 @@ export async function disconnectFromApp(shop) {
   }
 }
 
+/**
+ * ============================================================================
+ * Embedded feature APIs — templates & automations
+ * ============================================================================
+ * These power the in-admin Templates and Automations pages. They use the same
+ * app-level WYLTO_API_TOKEN Bearer auth as the connection helpers above.
+ */
+
+/**
+ * Shared request helper for the Wylto Shopify feature APIs. Handles Bearer
+ * auth, JSON, a request timeout, and normalises the result into
+ * { success, status, data?, error? }.
+ *
+ * @param {string} path - Path beginning with "/", relative to WYLTO_API_BASE_URL
+ * @param {{ method?: string, body?: any }} [options]
+ */
+async function wyltoRequest(path, { method = "GET", body } = {}) {
+  if (!WYLTO_API_TOKEN) {
+    return { success: false, status: 0, error: "WYLTO_API_TOKEN not configured" };
+  }
+
+  const controller = new AbortController();
+  const timeoutId = setTimeout(() => controller.abort(), WYLTO_API_TIMEOUT);
+  try {
+    const response = await fetch(`${WYLTO_API_BASE_URL}${path}`, {
+      method,
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${WYLTO_API_TOKEN}`,
+      },
+      body: body ? JSON.stringify(body) : undefined,
+      signal: controller.signal,
+    });
+    clearTimeout(timeoutId);
+
+    let data = null;
+    const text = await response.text();
+    if (text) {
+      try {
+        data = JSON.parse(text);
+      } catch {
+        data = { raw: text };
+      }
+    }
+
+    if (!response.ok) {
+      const error = data?.error || data?.message || `Wylto API error (${response.status})`;
+      return { success: false, status: response.status, error, data };
+    }
+    return { success: true, status: response.status, data };
+  } catch (error) {
+    clearTimeout(timeoutId);
+    if (error.name === "AbortError") {
+      return { success: false, status: 0, error: "Request timed out. Please try again." };
+    }
+    if (error.message?.includes("fetch failed") || error.message?.includes("ECONNREFUSED")) {
+      return { success: false, status: 0, error: "Cannot reach the Wylto API. Please try again later." };
+    }
+    return { success: false, status: 0, error: error.message || "Request failed" };
+  }
+}
+
+/**
+ * Lists the WhatsApp templates available to a shop's Wylto account.
+ * GET /api/shopify/templates?shop=<shop>
+ *
+ * @param {string} shop
+ * @returns {Promise<{ success: boolean, templates?: any[], error?: string }>}
+ */
+export async function getTemplates(shop) {
+  if (!shop) return { success: false, error: "Shop is required" };
+  const res = await wyltoRequest(`/api/shopify/templates?shop=${encodeURIComponent(shop)}`);
+  if (!res.success) return { success: false, error: res.error };
+  // Backend response shape is being confirmed; accept an array or a
+  // { templates: [...] } envelope and normalise to an array.
+  const templates = Array.isArray(res.data) ? res.data : res.data?.templates ?? [];
+  return { success: true, templates };
+}
+
+/**
+ * Creates a WhatsApp template for a shop's Wylto account. The template is
+ * submitted to Meta for approval and is not usable until approved.
+ * POST /api/shopify/templates?shop=<shop>&connectionId=<connectionId>
+ *
+ * @param {string} shop
+ * @param {string} connectionId - WhatsApp connection the template belongs to
+ * @param {object} template - { name, language, category, components }
+ */
+export async function createTemplate(shop, connectionId, template) {
+  if (!shop) return { success: false, error: "Shop is required" };
+  if (!connectionId) return { success: false, error: "A WhatsApp connection is required" };
+  const qs = `shop=${encodeURIComponent(shop)}&connectionId=${encodeURIComponent(connectionId)}`;
+  return wyltoRequest(`/api/shopify/templates?${qs}`, { method: "POST", body: template });
+}
+
+/**
+ * Saves the shop's order-status automations — which template fires for each
+ * order status, and whether that automation is enabled.
+ * POST /api/shopify/automations
+ *
+ * @param {string} shop
+ * @param {Array<{ status: string, enabled: boolean, templateId?: string, connectionId?: string }>} automations
+ */
+export async function saveAutomations(shop, automations) {
+  if (!shop) return { success: false, error: "Shop is required" };
+  if (!Array.isArray(automations)) return { success: false, error: "automations must be an array" };
+  return wyltoRequest(`/api/shopify/automations`, {
+    method: "POST",
+    body: { shop, automations },
+  });
+}
+
