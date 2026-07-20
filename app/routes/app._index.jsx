@@ -143,22 +143,18 @@ const BRAND_ACCENT = "#3cb45a";
 
 const FEATURES = [
   {
-    icon: "🧾",
     title: "Order Confirmation",
     desc: "A WhatsApp confirmation goes out as soon as a customer places an order.",
   },
   {
-    icon: "🚚",
     title: "Shipping & Delivery",
     desc: "Customers are kept posted when an order is fulfilled, shipped, and delivered.",
   },
   {
-    icon: "🛒",
     title: "Abandoned Cart Recovery",
     desc: "Shoppers who leave items behind get a friendly nudge with a link back to their cart.",
   },
   {
-    icon: "💵",
     title: "COD Confirmation",
     desc: "Cash-on-delivery orders are confirmed over WhatsApp before they ship.",
   },
@@ -255,7 +251,6 @@ function FeatureGrid() {
             background: "#ffffff",
           }}
         >
-          <div style={{ fontSize: "22px", lineHeight: 1, marginBottom: "10px" }}>{f.icon}</div>
           <div style={{ fontWeight: 650, fontSize: "13.5px", color: "#1a1a1a", marginBottom: "5px" }}>
             {f.title}
           </div>
