@@ -533,6 +533,7 @@ async function wyltoRequest(path, { method = "GET", body } = {}) {
   const controller = new AbortController();
   const timeoutId = setTimeout(() => controller.abort(), WYLTO_API_TIMEOUT);
   try {
+    console.log(`[Wylto API] ${method} ${path}`);
     const response = await fetch(`${WYLTO_API_BASE_URL}${path}`, {
       method,
       headers: {
@@ -546,6 +547,11 @@ async function wyltoRequest(path, { method = "GET", body } = {}) {
 
     let data = null;
     const text = await response.text();
+    // Log the raw body so response shapes can be confirmed against the
+    // backend without guessing at field names.
+    console.log(
+      `[Wylto API] ${method} ${path} -> ${response.status} body: ${text ? text.slice(0, 1000) : "(empty)"}`,
+    );
     if (text) {
       try {
         data = JSON.parse(text);
