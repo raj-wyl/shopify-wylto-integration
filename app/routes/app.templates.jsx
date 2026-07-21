@@ -79,9 +79,12 @@ const TEMPLATE_TYPES = [
     category: "MARKETING",
     suggestedName: "abandoned_cart_reminder",
     header: "You left something behind",
-    body: "Hi {{1}}, you still have items waiting in your cart. Complete your order before they run out — and let us know if you need any help choosing.",
+    // The cart link is a body parameter rather than a URL button: button
+    // parameters are filled by a different mechanism to body ones, and only
+    // body parameters are known to work through the automations API.
+    body: "Hi {{1}}, you still have items waiting in your cart. You can complete your order here: {{2}}. Let us know if you need any help choosing.",
     footer: "Powered by Wylto",
-    params: ["name"],
+    params: ["name", "cartURL"],
   },
 ];
 
@@ -91,6 +94,7 @@ const templateTypeByKey = (key) => TEMPLATE_TYPES.find((t) => t.key === key);
 const PARAM_LABELS = {
   name: "customer name",
   orderId: "order number",
+  cartURL: "cart link",
   totalAmount: "order total",
   productNames: "product names",
 };
