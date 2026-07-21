@@ -32,10 +32,9 @@ const ORDER_STATUSES = [
 const templateId = (t) => t.id ?? t.templateId ?? t.name ?? t.templateName ?? "";
 const templateName = (t) => t.name ?? t.templateName ?? templateId(t);
 const templateStatus = (t) => (t.status ?? t.approvalStatus ?? "").toString().toUpperCase();
-const isApproved = (t) => {
-  const s = templateStatus(t);
-  return s === "" || s === "APPROVED";
-};
+// Only approved templates can actually send, so they are the only ones offered
+// here. A template awaiting Meta's approval comes back with no status.
+const isApproved = (t) => templateStatus(t) === "APPROVED";
 
 export const loader = async ({ request }) => {
   const { session } = await authenticate.admin(request);

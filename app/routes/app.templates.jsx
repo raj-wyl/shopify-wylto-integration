@@ -15,15 +15,19 @@ import { checkConnectionStatus, getTemplates, createTemplate } from "../wylto-co
 // Defensive field access — the get-templates response shape is still being
 // confirmed, so accept the likely field names with fallbacks.
 const tName = (t) => t.name ?? t.templateName ?? t.id ?? t.templateId ?? "Untitled";
-const tStatus = (t) => (t.status ?? t.approvalStatus ?? "").toString().toUpperCase();
+// A freshly created template comes back with no status until Meta reviews it,
+// so treat "no status" as pending rather than showing nothing.
+const tStatus = (t) =>
+  (t.status ?? t.approvalStatus ?? "").toString().toUpperCase() || "PENDING";
 const tCategory = (t) => (t.category ?? "").toString().toUpperCase();
 
 function statusColors(status) {
   if (status === "APPROVED") return { bg: "#e7f6ec", fg: "#0f7a3d" };
   if (status === "REJECTED") return { bg: "#fdecec", fg: "#b42318" };
-  if (status === "PENDING") return { bg: "#fff5e5", fg: "#b25e02" };
-  return { bg: "#f1f1f1", fg: "#616161" };
+  return { bg: "#fff5e5", fg: "#b25e02" };
 }
+
+const statusLabel = (status) => (status === "PENDING" ? "PENDING APPROVAL" : status);
 
 /** Builds the Meta component array from the simple form fields. */
 function buildComponents({ headerText, bodyText, footerText }) {
@@ -98,7 +102,10 @@ export const action = async ({ request }) => {
   if (!result.success) {
     return { success: false, error: result.error || "Failed to create template." };
   }
-  return { success: true, message: "Template submitted for approval." };
+  return {
+    success: true,
+    message: "Template created — waiting for approval from Meta. This usually takes a few minutes.",
+  };
 };
 
 const inputStyle = {
@@ -167,6 +174,11 @@ export default function Templates() {
         {templates.length === 0 ? (
           <s-paragraph>No templates yet. Create your first one below.</s-paragraph>
         ) : (
+          <>
+          <s-paragraph>
+            Templates awaiting Meta&apos;s approval show as <strong>Pending approval</strong> and
+            can&apos;t be used in automations until they&apos;re approved.
+          </s-paragraph>
           <div style={{ display: "flex", flexDirection: "column", gap: "8px", marginTop: "6px" }}>
             {templates.map((t, i) => {
               const status = tStatus(t);
@@ -193,24 +205,24 @@ export default function Templates() {
                       </div>
                     )}
                   </div>
-                  {status && (
-                    <span
-                      style={{
-                        background: c.bg,
-                        color: c.fg,
-                        borderRadius: "999px",
-                        padding: "3px 10px",
-                        fontSize: "11.5px",
-                        fontWeight: 700,
-                      }}
-                    >
-                      {status}
-                    </span>
-                  )}
+                  <span
+                    style={{
+                      background: c.bg,
+                      color: c.fg,
+                      borderRadius: "999px",
+                      padding: "3px 10px",
+                      fontSize: "11.5px",
+                      fontWeight: 700,
+                      whiteSpace: "nowrap",
+                    }}
+                  >
+                    {statusLabel(status)}
+                  </span>
                 </div>
               );
             })}
           </div>
+          </>
         )}
       </s-section>
 
