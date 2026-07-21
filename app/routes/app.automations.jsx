@@ -119,6 +119,13 @@ export default function Automations() {
   const setRow = (key, patch) =>
     setRows((prev) => ({ ...prev, [key]: { ...prev[key], ...patch } }));
 
+  // An enabled stage with no template is rejected by the backend, and it
+  // rejects the whole request — so catch it here rather than losing the rows
+  // that were set up correctly.
+  const needsTemplate = ORDER_STATUSES.filter(
+    (s) => rows[s.key].enabled && !rows[s.key].templateId,
+  );
+
   const handleSave = () => {
     const payload = ORDER_STATUSES.filter(
       (s) => s.verified !== false || rows[s.key].enabled,
@@ -219,7 +226,8 @@ export default function Automations() {
                     minWidth: "220px",
                     padding: "8px 10px",
                     borderRadius: "8px",
-                    border: "1px solid #d1d5db",
+                    border:
+                      row.enabled && !row.templateId ? "1px solid #b42318" : "1px solid #d1d5db",
                     fontSize: "13.5px",
                     background: row.enabled ? "#ffffff" : "#f1f1f1",
                     color: row.enabled ? "#1a1a1a" : "#8a8a8a",
@@ -237,8 +245,28 @@ export default function Automations() {
           })}
         </div>
 
+        {needsTemplate.length > 0 && (
+          <s-box
+            padding="base"
+            borderWidth="base"
+            borderRadius="base"
+            background="critical-subdued"
+            marginBlockStart="base"
+          >
+            <s-text tone="critical">
+              Choose a template for {needsTemplate.map((s) => s.label).join(", ")} — or turn
+              {needsTemplate.length === 1 ? " it" : " them"} off.
+            </s-text>
+          </s-box>
+        )}
+
         <s-stack direction="inline" gap="base" marginBlockStart="base">
-          <s-button variant="primary" onClick={handleSave} loading={isSaving} disabled={isSaving}>
+          <s-button
+            variant="primary"
+            onClick={handleSave}
+            loading={isSaving}
+            disabled={isSaving || needsTemplate.length > 0}
+          >
             Save automations
           </s-button>
         </s-stack>
