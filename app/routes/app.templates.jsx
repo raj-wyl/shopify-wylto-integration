@@ -203,10 +203,29 @@ export default function Templates() {
   const isSubmitting = fetcher.state === "submitting";
   const set = (k, v) => setForm((prev) => ({ ...prev, [k]: v }));
 
+  // Meta requires template names to be unique per account, so a second
+  // "Order cancelled" template can't reuse the same name.
+  const existingNames = new Set(
+    templates.map((t) => (t.name ?? t.templateName ?? "").toLowerCase()).filter(Boolean),
+  );
+  const nameTaken = Boolean(form.name) && existingNames.has(form.name.toLowerCase());
+
+  /** Suggests a free name, adding _2, _3… when the base is already used. */
+  const availableName = (base) => {
+    if (!existingNames.has(base.toLowerCase())) return base;
+    let n = 2;
+    while (existingNames.has(`${base}_${n}`.toLowerCase())) n += 1;
+    return `${base}_${n}`;
+  };
+
   // Picking a type suggests a matching name, which the merchant can still change.
   const onTypeChange = (key) => {
     const t = templateTypeByKey(key);
-    setForm((prev) => ({ ...prev, templateType: key, name: t ? t.suggestedName : prev.name }));
+    setForm((prev) => ({
+      ...prev,
+      templateType: key,
+      name: t ? availableName(t.suggestedName) : prev.name,
+    }));
   };
 
   useEffect(() => {
@@ -392,9 +411,15 @@ export default function Templates() {
               onChange={(e) => set("name", e.target.value)}
               disabled={isSubmitting || !selectedType}
             />
-            <s-text tone="subdued" style={{ fontSize: "12px" }}>
-              Lowercase letters, numbers and underscores only. Must be unique.
-            </s-text>
+            {nameTaken ? (
+              <s-text tone="critical" style={{ fontSize: "12px" }}>
+                You already have a template called “{form.name}”. Choose a different name.
+              </s-text>
+            ) : (
+              <s-text tone="subdued" style={{ fontSize: "12px" }}>
+                Lowercase letters, numbers and underscores only. Must be unique.
+              </s-text>
+            )}
           </div>
 
           <div style={{ maxWidth: "220px" }}>
@@ -413,7 +438,7 @@ export default function Templates() {
               variant="primary"
               onClick={handleCreate}
               loading={isSubmitting}
-              disabled={isSubmitting || !selectedType || !form.name}
+              disabled={isSubmitting || !selectedType || !form.name || nameTaken}
             >
               Create template
             </s-button>
