@@ -23,9 +23,6 @@ import {
 // separate trigger in Wylto, not an order status.
 const ORDER_STATUSES = [
   { key: "created", label: "Order placed" },
-  { key: "paid", label: "Payment received" },
-  { key: "inTransit", label: "In transit" },
-  { key: "outForDelivery", label: "Out for delivery" },
   { key: "delivered", label: "Delivered" },
   { key: "cancelled", label: "Order cancelled" },
 ];
