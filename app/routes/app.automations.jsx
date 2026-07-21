@@ -17,18 +17,17 @@ import {
  * and enable/disable each one — all inside the Shopify admin.
  */
 
-// Order stages Wylto can react to. Keys mirror the backend automation
-// `status` values; labels are what the merchant sees.
-// NOTE: the exact status keys are pending final confirmation from the backend.
+// Order stages Wylto can react to. These keys are the ones the Shopify Order
+// Update trigger supports in Wylto — sending anything else is rejected with
+// "Unknown order status". Abandoned cart is deliberately absent: it is a
+// separate trigger in Wylto, not an order status.
 const ORDER_STATUSES = [
   { key: "created", label: "Order placed" },
   { key: "paid", label: "Payment received" },
-  { key: "fulfilled", label: "Order shipped" },
   { key: "inTransit", label: "In transit" },
   { key: "outForDelivery", label: "Out for delivery" },
   { key: "delivered", label: "Delivered" },
   { key: "cancelled", label: "Order cancelled" },
-  { key: "abandonedCart", label: "Abandoned cart" },
 ];
 
 // Defensive field access — the get-templates response shape is still being
