@@ -518,6 +518,28 @@ export async function disconnectFromApp(shop) {
  */
 
 /**
+ * Pulls a human-readable message out of an error response.
+ *
+ * Errors arrive in a few shapes: a plain { error: "..." } string, or — when
+ * the failure came from Meta via Wylto — a nested object whose most useful
+ * field is error_user_msg (e.g. "This template has too many variables for its
+ * length"). Always returns a string, so the UI never tries to render an object.
+ *
+ * @param {any} data - Parsed response body
+ * @param {number} status - HTTP status, used for the fallback message
+ * @returns {string}
+ */
+function extractError(data, status) {
+  const err = data?.error;
+  if (typeof err === "string" && err) return err;
+  if (err && typeof err === "object") {
+    return err.error_user_msg || err.error_user_title || err.message || `Wylto API error (${status})`;
+  }
+  if (typeof data?.message === "string" && data.message) return data.message;
+  return `Wylto API error (${status})`;
+}
+
+/**
  * Shared request helper for the Wylto Shopify feature APIs. Handles Bearer
  * auth, JSON, a request timeout, and normalises the result into
  * { success, status, data?, error? }.
@@ -561,8 +583,7 @@ async function wyltoRequest(path, { method = "GET", body } = {}) {
     }
 
     if (!response.ok) {
-      const error = data?.error || data?.message || `Wylto API error (${response.status})`;
-      return { success: false, status: response.status, error, data };
+      return { success: false, status: response.status, error: extractError(data, response.status), data };
     }
     return { success: true, status: response.status, data };
   } catch (error) {
