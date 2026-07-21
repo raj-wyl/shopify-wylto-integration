@@ -29,21 +29,86 @@ function statusColors(status) {
 
 const statusLabel = (status) => (status === "PENDING" ? "PENDING APPROVAL" : status);
 
-/** Builds the Meta component array from the simple form fields. */
-function buildComponents({ headerText, bodyText, footerText }) {
+/**
+ * Fixed template definitions.
+ *
+ * The message body is not free text. A workflow created through
+ * /api/shopify/automations receives only a templateId — there is nowhere to
+ * say what {{1}} and {{2}} mean — so the backend has to infer the parameters
+ * from the template itself. If merchants could write their own body, the
+ * placeholder count would drift from what the backend fills and Meta would
+ * reject the send with "number of localizable_params does not match".
+ *
+ * Keeping the bodies fixed means the mapping below is the contract: the
+ * position of each entry in `params` is the placeholder it fills.
+ */
+const TEMPLATE_TYPES = [
+  {
+    key: "order_placed",
+    label: "Order placed",
+    category: "UTILITY",
+    suggestedName: "order_placed_update",
+    header: "Order confirmed",
+    body: "Hi {{1}}, thank you for your order {{2}}. We have received it and will notify you as soon as it ships. Thanks for shopping with us!",
+    footer: "Powered by Wylto",
+    params: ["name", "orderId"],
+  },
+  {
+    key: "order_delivered",
+    label: "Delivered",
+    category: "UTILITY",
+    suggestedName: "order_delivered_update",
+    header: "Order delivered",
+    body: "Hi {{1}}, your order {{2}} has been delivered. We hope you love it! If you have any questions or need help with your purchase, feel free to reach out to us anytime.",
+    footer: "Powered by Wylto",
+    params: ["name", "orderId"],
+  },
+  {
+    key: "order_cancelled",
+    label: "Order cancelled",
+    category: "UTILITY",
+    suggestedName: "order_cancelled_update",
+    header: "Order cancelled",
+    body: "Hi {{1}}, your order {{2}} has been cancelled. If this was not expected or you need any assistance, please reach out to us and we will be happy to help.",
+    footer: "Powered by Wylto",
+    params: ["name", "orderId"],
+  },
+  {
+    key: "abandoned_cart",
+    label: "Abandoned cart",
+    category: "MARKETING",
+    suggestedName: "abandoned_cart_reminder",
+    header: "You left something behind",
+    body: "Hi {{1}}, you still have items waiting in your cart. Complete your order before they run out — and let us know if you need any help choosing.",
+    footer: "Powered by Wylto",
+    params: ["name"],
+  },
+];
+
+const templateTypeByKey = (key) => TEMPLATE_TYPES.find((t) => t.key === key);
+
+/** Human label for a variable, used to explain the placeholders. */
+const PARAM_LABELS = {
+  name: "customer name",
+  orderId: "order number",
+  totalAmount: "order total",
+  productNames: "product names",
+};
+
+/** Builds the Meta component array for a fixed template type. */
+function buildComponents(type) {
   const components = [];
-  if (headerText) {
-    components.push({ type: "HEADER", format: "TEXT", text: headerText });
+  if (type.header) {
+    components.push({ type: "HEADER", format: "TEXT", text: type.header });
   }
-  const body = { type: "BODY", text: bodyText };
-  const vars = bodyText.match(/\{\{\d+\}\}/g) || [];
-  if (vars.length) {
+  const body = { type: "BODY", text: type.body };
+  if (type.params.length) {
     // Meta requires a sample value per {{n}} placeholder.
-    body.example = { body_text: [vars.map((_, i) => `Sample ${i + 1}`)] };
+    body.example = { body_text: [type.params.map((p) => PARAM_LABELS[p] || p)] };
   }
   components.push(body);
-  if (footerText) {
-    components.push({ type: "FOOTER", text: footerText });
+  if (type.footer) {
+    components.push({ type: "FOOTER", text: type.footer });
   }
   return components;
 }
@@ -75,14 +140,17 @@ export const action = async ({ request }) => {
 
   const formData = await request.formData();
   const name = formData.get("name")?.toString().trim() || "";
-  const category = formData.get("category")?.toString() || "UTILITY";
   const language = formData.get("language")?.toString().trim() || "en_US";
-  const headerText = formData.get("headerText")?.toString().trim() || "";
-  const bodyText = formData.get("bodyText")?.toString().trim() || "";
-  const footerText = formData.get("footerText")?.toString().trim() || "";
+  const typeKey = formData.get("templateType")?.toString() || "";
 
-  if (!name || !bodyText) {
-    return { success: false, error: "Template name and body are required." };
+  // The body comes from the fixed definition, never from the request, so the
+  // placeholders always match what the backend fills in.
+  const type = templateTypeByKey(typeKey);
+  if (!type) {
+    return { success: false, error: "Choose a template type." };
+  }
+  if (!name) {
+    return { success: false, error: "Template name is required." };
   }
   if (!/^[a-z0-9_]+$/.test(name)) {
     return {
@@ -94,8 +162,8 @@ export const action = async ({ request }) => {
   const template = {
     name,
     language,
-    category,
-    components: buildComponents({ headerText, bodyText, footerText }),
+    category: type.category,
+    components: buildComponents(type),
   };
 
   const result = await createTemplate(shop, template);
@@ -124,23 +192,24 @@ export default function Templates() {
   const fetcher = useFetcher();
   const shopify = useAppBridge();
 
-  const [form, setForm] = useState({
-    name: "",
-    category: "UTILITY",
-    language: "en_US",
-    headerText: "",
-    bodyText: "",
-    footerText: "",
-  });
+  const emptyForm = { templateType: "", name: "", language: "en_US" };
+  const [form, setForm] = useState(emptyForm);
+  const selectedType = templateTypeByKey(form.templateType);
 
   const isSubmitting = fetcher.state === "submitting";
   const set = (k, v) => setForm((prev) => ({ ...prev, [k]: v }));
+
+  // Picking a type suggests a matching name, which the merchant can still change.
+  const onTypeChange = (key) => {
+    const t = templateTypeByKey(key);
+    setForm((prev) => ({ ...prev, templateType: key, name: t ? t.suggestedName : prev.name }));
+  };
 
   useEffect(() => {
     if (fetcher.state !== "idle" || !fetcher.data) return;
     if (fetcher.data.success) {
       shopify.toast.show(fetcher.data.message || "Saved");
-      setForm({ name: "", category: "UTILITY", language: "en_US", headerText: "", bodyText: "", footerText: "" });
+      setForm({ templateType: "", name: "", language: "en_US" });
     } else if (fetcher.data.error) {
       shopify.toast.show(fetcher.data.error, { isError: true });
     }
@@ -229,81 +298,109 @@ export default function Templates() {
       {/* Create a template */}
       <s-section heading="Create a template">
         <s-paragraph>
-          Build a WhatsApp template. It&apos;s submitted to Meta for approval and can be
-          used in automations once approved. Use <s-text>{"{{1}}"}</s-text>, <s-text>{"{{2}}"}</s-text> in
-          the body for dynamic values like the customer name or order number.
+          Choose the update you want to send. The message wording is fixed so the order
+          details fill in correctly when it&apos;s sent. Templates go to Meta for approval and
+          can be used in automations once approved.
         </s-paragraph>
 
         <s-stack direction="block" gap="base" marginBlockStart="base">
           <div>
+            <s-label>Template type</s-label>
+            <select
+              style={inputStyle}
+              value={form.templateType}
+              onChange={(e) => onTypeChange(e.target.value)}
+              disabled={isSubmitting}
+            >
+              <option value="">Choose a template type…</option>
+              {TEMPLATE_TYPES.map((t) => (
+                <option key={t.key} value={t.key}>
+                  {t.label}
+                </option>
+              ))}
+            </select>
+          </div>
+
+          {selectedType && (
+            <div
+              style={{
+                border: "1px solid #e3e3e3",
+                borderRadius: "12px",
+                padding: "16px",
+                background: "#fafafa",
+              }}
+            >
+              <div
+                style={{
+                  fontSize: "11px",
+                  fontWeight: 700,
+                  letterSpacing: "0.04em",
+                  textTransform: "uppercase",
+                  color: "#8a8a8a",
+                  marginBottom: "10px",
+                }}
+              >
+                Message preview
+              </div>
+              <div
+                style={{
+                  background: "#ffffff",
+                  border: "1px solid #e8e8e8",
+                  borderRadius: "10px",
+                  padding: "12px 14px",
+                  fontSize: "13.5px",
+                  lineHeight: 1.55,
+                  color: "#1a1a1a",
+                  maxWidth: "460px",
+                }}
+              >
+                <div style={{ fontWeight: 700, marginBottom: "6px" }}>{selectedType.header}</div>
+                <div>{selectedType.body}</div>
+                <div style={{ color: "#8a8a8a", fontSize: "12px", marginTop: "8px" }}>
+                  {selectedType.footer}
+                </div>
+              </div>
+              <div style={{ fontSize: "12.5px", color: "#616161", marginTop: "10px" }}>
+                {selectedType.params.length > 0 ? (
+                  <>
+                    Filled in automatically:{" "}
+                    {selectedType.params.map((p, i) => (
+                      <span key={p}>
+                        {i > 0 && " · "}
+                        <strong>{`{{${i + 1}}}`}</strong> {PARAM_LABELS[p] || p}
+                      </span>
+                    ))}
+                  </>
+                ) : (
+                  "No dynamic values in this message."
+                )}
+                <span style={{ marginLeft: "8px" }}>· Category: {selectedType.category}</span>
+              </div>
+            </div>
+          )}
+
+          <div>
             <s-label>Template name</s-label>
             <input
               style={inputStyle}
-              placeholder="order_shipped_update"
+              placeholder="order_placed_update"
               value={form.name}
               onChange={(e) => set("name", e.target.value)}
-              disabled={isSubmitting}
+              disabled={isSubmitting || !selectedType}
             />
             <s-text tone="subdued" style={{ fontSize: "12px" }}>
-              Lowercase letters, numbers and underscores only.
+              Lowercase letters, numbers and underscores only. Must be unique.
             </s-text>
           </div>
 
-          <div style={{ display: "flex", gap: "12px", flexWrap: "wrap" }}>
-            <div style={{ flex: "1 1 160px" }}>
-              <s-label>Category</s-label>
-              <select
-                style={inputStyle}
-                value={form.category}
-                onChange={(e) => set("category", e.target.value)}
-                disabled={isSubmitting}
-              >
-                <option value="UTILITY">Utility</option>
-                <option value="MARKETING">Marketing</option>
-              </select>
-            </div>
-            <div style={{ flex: "1 1 160px" }}>
-              <s-label>Language</s-label>
-              <input
-                style={inputStyle}
-                placeholder="en_US"
-                value={form.language}
-                onChange={(e) => set("language", e.target.value)}
-                disabled={isSubmitting}
-              />
-            </div>
-          </div>
-
-          <div>
-            <s-label>Header (optional)</s-label>
+          <div style={{ maxWidth: "220px" }}>
+            <s-label>Language</s-label>
             <input
               style={inputStyle}
-              placeholder="Your order has shipped!"
-              value={form.headerText}
-              onChange={(e) => set("headerText", e.target.value)}
-              disabled={isSubmitting}
-            />
-          </div>
-
-          <div>
-            <s-label>Body</s-label>
-            <textarea
-              style={{ ...inputStyle, minHeight: "90px", resize: "vertical", fontFamily: "inherit" }}
-              placeholder="Hi {{1}}, your order {{2}} is on its way. Track it anytime."
-              value={form.bodyText}
-              onChange={(e) => set("bodyText", e.target.value)}
-              disabled={isSubmitting}
-            />
-          </div>
-
-          <div>
-            <s-label>Footer (optional)</s-label>
-            <input
-              style={inputStyle}
-              placeholder="Thanks for shopping with us"
-              value={form.footerText}
-              onChange={(e) => set("footerText", e.target.value)}
-              disabled={isSubmitting}
+              placeholder="en_US"
+              value={form.language}
+              onChange={(e) => set("language", e.target.value)}
+              disabled={isSubmitting || !selectedType}
             />
           </div>
 
@@ -312,7 +409,7 @@ export default function Templates() {
               variant="primary"
               onClick={handleCreate}
               loading={isSubmitting}
-              disabled={isSubmitting || !form.name || !form.bodyText}
+              disabled={isSubmitting || !selectedType || !form.name}
             >
               Create template
             </s-button>
