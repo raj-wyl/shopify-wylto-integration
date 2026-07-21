@@ -21,10 +21,15 @@ import {
 // Update trigger supports in Wylto — sending anything else is rejected with
 // "Unknown order status". Abandoned cart is deliberately absent: it is a
 // separate trigger in Wylto, not an order status.
+// `verified: false` marks a status whose key the backend has not confirmed.
+// Those are only sent when the merchant actually enables them, so an
+// unrecognised key can never break a save for someone not using that stage —
+// the backend rejects the whole request on the first status it doesn't know.
 const ORDER_STATUSES = [
   { key: "created", label: "Order placed" },
   { key: "delivered", label: "Delivered" },
   { key: "cancelled", label: "Order cancelled" },
+  { key: "abandonedCart", label: "Abandoned cart", verified: false },
 ];
 
 // Defensive field access — the get-templates response shape is still being
@@ -115,7 +120,9 @@ export default function Automations() {
     setRows((prev) => ({ ...prev, [key]: { ...prev[key], ...patch } }));
 
   const handleSave = () => {
-    const payload = ORDER_STATUSES.map((s) => ({
+    const payload = ORDER_STATUSES.filter(
+      (s) => s.verified !== false || rows[s.key].enabled,
+    ).map((s) => ({
       status: s.key,
       enabled: rows[s.key].enabled,
       templateId: rows[s.key].templateId || undefined,
