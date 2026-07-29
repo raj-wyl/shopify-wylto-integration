@@ -445,7 +445,7 @@ export default function WyltoConnection() {
             />
             <div style={{ marginTop: "10px" }}>
               <a
-                href="https://app.wylto.com/login"
+                href="https://app.wylto.com/login?redirect=%2Fsettings%3Fsection%3Dapi-token"
                 target="_blank"
                 rel="noopener noreferrer"
                 style={{ fontSize: "13px", color: "#1f7a52", fontWeight: 600, textDecoration: "none" }}
