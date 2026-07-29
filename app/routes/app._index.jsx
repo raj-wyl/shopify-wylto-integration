@@ -363,7 +363,7 @@ export default function WyltoConnection() {
             <a
               href={
                 loaderData.connectionData?.appId
-                  ? `https://app.wylto.com/app/${loaderData.connectionData.appId}/settings`
+                  ? `https://app.wylto.com/app/${loaderData.connectionData.appId}`
                   : "https://app.wylto.com"
               }
               target="_blank"
@@ -445,7 +445,7 @@ export default function WyltoConnection() {
             />
             <div style={{ marginTop: "10px" }}>
               <a
-                href="https://app.wylto.com"
+                href="https://app.wylto.com/login"
                 target="_blank"
                 rel="noopener noreferrer"
                 style={{ fontSize: "13px", color: "#1f7a52", fontWeight: 600, textDecoration: "none" }}
