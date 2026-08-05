@@ -28,6 +28,11 @@ export const loader = async ({ request }) => {
     shopDomain,
     isConnected: connectionStatus.connected,
     connectionData: connectionStatus.data || null,
+    // URL of the Wylto login / API-token view to embed in-admin. Set this env
+    // var once the team provides the frame-able URL; until then the connect
+    // screen falls back to the plain "Get your API token" link.
+    // eslint-disable-next-line no-undef
+    embedTokenUrl: process.env.WYLTO_EMBED_TOKEN_URL || "",
   };
 };
 
@@ -261,6 +266,66 @@ function FeatureGrid() {
   );
 }
 
+/**
+ * Embeds the Wylto login / API-token view inside the Shopify admin, so the
+ * merchant never leaves for an external tab (Shopify rule 2.2.2).
+ *
+ * Renders nothing until a URL is supplied (env WYLTO_EMBED_TOKEN_URL) — the
+ * caller falls back to a plain link in that case. The framed page must send
+ * headers that permit embedding (frame-ancestors including this app's origin)
+ * and work without third-party cookies (rule 1.1.1); both are handled on the
+ * Wylto side.
+ */
+function TokenFrame({ url, title = "Wylto login" }) {
+  const [loaded, setLoaded] = useState(false);
+
+  if (!url) return null;
+
+  return (
+    <div
+      style={{
+        position: "relative",
+        width: "100%",
+        border: "1px solid #e3e3e3",
+        borderRadius: "12px",
+        overflow: "hidden",
+        background: "#ffffff",
+        minHeight: "480px",
+      }}
+    >
+      {!loaded && (
+        <div
+          style={{
+            position: "absolute",
+            inset: 0,
+            display: "grid",
+            placeItems: "center",
+            color: "#8a8a8a",
+            fontSize: "13.5px",
+          }}
+        >
+          Loading…
+        </div>
+      )}
+      <iframe
+        src={url}
+        title={title}
+        onLoad={() => setLoaded(true)}
+        style={{
+          width: "100%",
+          height: "480px",
+          border: "none",
+          display: "block",
+        }}
+        // Allow the framed page to run its own scripts / forms / same-origin
+        // session, but nothing more than it needs.
+        sandbox="allow-scripts allow-forms allow-same-origin allow-popups"
+        referrerPolicy="no-referrer"
+      />
+    </div>
+  );
+}
+
 /* eslint-enable react/prop-types */
 
 export default function WyltoConnection() {
@@ -443,16 +508,25 @@ export default function WyltoConnection() {
                 e.target.style.boxShadow = "none";
               }}
             />
-            <div style={{ marginTop: "10px" }}>
-              <a
-                href="https://app.wylto.com/login"
-                target="_blank"
-                rel="noopener noreferrer"
-                style={{ fontSize: "13px", color: "#1f7a52", fontWeight: 600, textDecoration: "none" }}
-              >
-                Get your API token →
-              </a>
-            </div>
+            {loaderData.embedTokenUrl ? (
+              <div style={{ marginTop: "14px" }}>
+                <s-text tone="subdued" style={{ display: "block", fontSize: "12px", marginBottom: "8px" }}>
+                  Log in to Wylto below and copy your API token, then paste it above.
+                </s-text>
+                <TokenFrame url={loaderData.embedTokenUrl} title="Wylto login" />
+              </div>
+            ) : (
+              <div style={{ marginTop: "10px" }}>
+                <a
+                  href="https://app.wylto.com/login"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  style={{ fontSize: "13px", color: "#1f7a52", fontWeight: 600, textDecoration: "none" }}
+                >
+                  Get your API token →
+                </a>
+              </div>
+            )}
           </s-box>
 
           {actionData?.error && (
