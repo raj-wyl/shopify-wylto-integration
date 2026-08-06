@@ -16,12 +16,15 @@ The URL is read from an environment variable in the loader:
 WYLTO_EMBED_TOKEN_URL
 ```
 
-- **Set** → the connect screen embeds the Wylto login/token view in the iframe.
-- **Unset (default)** → falls back to the existing "Get your API token →" link
-  that opens `app.wylto.com/login` in a new tab.
+- **Unset** → embeds the default page (`https://app.wylto.com/api-token`).
+- **`off`** → kill-switch: falls back to the plain "Get your API token →" link
+  (opens `app.wylto.com/login` in a new tab). Use this to disable the iframe in
+  production **without a code redeploy** if it ever misbehaves.
+- **any other value** → embeds that URL.
 
-So the infrastructure ships safely with the variable empty; setting it activates
-the embedded experience with no further code change.
+The connect flow degrades gracefully: even if the iframe renders blank, the
+token input and Connect button are unchanged, so a merchant can still paste a
+token and connect.
 
 ## What the Wylto side must provide
 

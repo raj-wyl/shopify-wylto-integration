@@ -24,16 +24,25 @@ export const loader = async ({ request }) => {
     console.error("Failed to check connection status:", error);
   }
 
+  // URL of the Wylto login / API-token view to embed in-admin.
+  //   unset        -> default page (iframe on)
+  //   "off"        -> kill-switch: fall back to the plain "Get your API token"
+  //                   link, no code redeploy needed
+  //   any other    -> use it as the frame URL
+  // eslint-disable-next-line no-undef
+  const embedEnv = process.env.WYLTO_EMBED_TOKEN_URL;
+  const embedTokenUrl =
+    embedEnv == null
+      ? "https://app.wylto.com/api-token"
+      : embedEnv.trim().toLowerCase() === "off"
+        ? ""
+        : embedEnv;
+
   return {
     shopDomain,
     isConnected: connectionStatus.connected,
     connectionData: connectionStatus.data || null,
-    // URL of the Wylto login / API-token view to embed in-admin. Defaults to
-    // the page the team provides for this; overridable via env without a code
-    // change. If cleared, the connect screen falls back to the plain
-    // "Get your API token" link.
-    // eslint-disable-next-line no-undef
-    embedTokenUrl: process.env.WYLTO_EMBED_TOKEN_URL || "https://app.wylto.com/api-token",
+    embedTokenUrl,
   };
 };
 
