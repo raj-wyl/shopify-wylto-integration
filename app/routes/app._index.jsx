@@ -486,9 +486,6 @@ export default function WyltoConnection() {
             <s-label for="wyltoToken" style={{ display: "block", marginBottom: "8px" }}>
               Wylto App Token
             </s-label>
-            <s-text tone="subdued" style={{ display: "block", marginTop: "0", marginBottom: "16px" }}>
-              Find this in your Wylto Dashboard → Settings → API Settings.
-            </s-text>
             <input
               id="wyltoToken"
               type="password"
@@ -518,25 +515,16 @@ export default function WyltoConnection() {
                 e.target.style.boxShadow = "none";
               }}
             />
-            {loaderData.embedTokenUrl ? (
-              <div style={{ marginTop: "14px" }}>
-                <s-text tone="subdued" style={{ display: "block", fontSize: "12px", marginBottom: "8px" }}>
-                  Log in to Wylto below and copy your API token, then paste it above.
-                </s-text>
-                <TokenFrame url={loaderData.embedTokenUrl} title="Wylto login" />
-              </div>
-            ) : (
-              <div style={{ marginTop: "10px" }}>
-                <a
-                  href="https://app.wylto.com/login"
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  style={{ fontSize: "13px", color: "#1f7a52", fontWeight: 600, textDecoration: "none" }}
-                >
-                  Get your API token →
-                </a>
-              </div>
-            )}
+            <s-stack direction="inline" gap="base" marginBlockStart="base">
+              <s-button
+                onClick={(e) => handleSubmit(e, "connect")}
+                disabled={isLoading || !wyltoToken}
+                loading={isLoading && actionType === "connect"}
+                variant="primary"
+              >
+                Connect Store
+              </s-button>
+            </s-stack>
           </s-box>
 
           {actionData?.error && (
@@ -569,23 +557,26 @@ export default function WyltoConnection() {
               </s-box>
           )}
 
-          <s-stack direction="inline" gap="base" marginBlockStart="base">
-            <s-button
-              onClick={(e) => handleSubmit(e, "test")}
-              disabled={isLoading}
-              loading={isLoading && actionType === "test"}
-            >
-              Check Status
-            </s-button>
-            <s-button
-              onClick={(e) => handleSubmit(e, "connect")}
-              disabled={isLoading || !wyltoToken}
-              loading={isLoading && actionType === "connect"}
-              variant="primary"
-            >
-              Connect Store
-            </s-button>
-          </s-stack>
+          {/* Get your token: log in to Wylto right here, copy the token, paste above */}
+          {loaderData.embedTokenUrl ? (
+            <s-box marginBlockStart="base">
+              <s-text tone="subdued" style={{ display: "block", fontSize: "13px", marginBottom: "8px" }}>
+                Don&apos;t have your token yet? Log in to Wylto below, copy your API token, and paste it in the field above.
+              </s-text>
+              <TokenFrame url={loaderData.embedTokenUrl} title="Wylto login" />
+            </s-box>
+          ) : (
+            <div style={{ marginTop: "10px" }}>
+              <a
+                href="https://app.wylto.com/login"
+                target="_blank"
+                rel="noopener noreferrer"
+                style={{ fontSize: "13px", color: "#1f7a52", fontWeight: 600, textDecoration: "none" }}
+              >
+                Get your API token →
+              </a>
+            </div>
+          )}
             </s-stack>
       </s-section>
 
