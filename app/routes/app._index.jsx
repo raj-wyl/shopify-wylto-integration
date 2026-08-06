@@ -356,6 +356,11 @@ export default function WyltoConnection() {
       // Reload page data after a successful connect or disconnect so the
       // loader re-runs and the UI reflects the new connection state.
       const msg = actionData.message?.toLowerCase() || "";
+      // Clear the token field on disconnect so the old token isn't left in the
+      // input. ("disconnected" also contains "connected", so check it first.)
+      if (msg.includes("disconnected")) {
+        setWyltoToken("");
+      }
       if (msg.includes("connected") || msg.includes("disconnected")) {
         setTimeout(() => {
           fetcher.load("/app");
