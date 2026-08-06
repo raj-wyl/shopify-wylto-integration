@@ -28,11 +28,12 @@ export const loader = async ({ request }) => {
     shopDomain,
     isConnected: connectionStatus.connected,
     connectionData: connectionStatus.data || null,
-    // URL of the Wylto login / API-token view to embed in-admin. Set this env
-    // var once the team provides the frame-able URL; until then the connect
-    // screen falls back to the plain "Get your API token" link.
+    // URL of the Wylto login / API-token view to embed in-admin. Defaults to
+    // the page the team provides for this; overridable via env without a code
+    // change. If cleared, the connect screen falls back to the plain
+    // "Get your API token" link.
     // eslint-disable-next-line no-undef
-    embedTokenUrl: process.env.WYLTO_EMBED_TOKEN_URL || "",
+    embedTokenUrl: process.env.WYLTO_EMBED_TOKEN_URL || "https://app.wylto.com/api-token",
   };
 };
 
