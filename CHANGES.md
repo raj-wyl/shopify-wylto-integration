@@ -8,11 +8,13 @@ embedded-login design in detail.
 
 ## Connect / home screen (`app/routes/app._index.jsx`)
 
-- **Embedded login (dormant by default).** The connect screen can embed a Wylto
-  login / API-token page in an `<iframe>` so the merchant never leaves the
-  Shopify admin (App Store rule 2.2.2). Controlled by the `WYLTO_EMBED_TOKEN_URL`
-  env var; **off by default** until Wylto provides a URL that is frameable and
-  works without third-party cookies. See `EMBEDDED_LOGIN.md`.
+- **Embedded login.** The connect screen embeds the Wylto login / API-token page
+  (`https://app.wylto.com/api-token`) in an `<iframe>` so the merchant never
+  leaves the Shopify admin (App Store rule 2.2.2). The page sends no
+  X-Frame-Options / restrictive CSP, so it can be framed; the remaining check is
+  that login works without third-party cookies (incognito) on a real store.
+  Controlled by `WYLTO_EMBED_TOKEN_URL` (`off` = kill-switch to the plain link,
+  env-only). See `EMBEDDED_LOGIN.md`.
 - **Removed the "Open Wylto Dashboard →" button** from the connected view, so the
   app no longer pushes merchants out of the admin for a core action. The
   connected view now offers Disconnect only; template/automation management is

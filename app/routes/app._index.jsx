@@ -25,18 +25,21 @@ export const loader = async ({ request }) => {
   }
 
   // URL of the Wylto login / API-token view to embed in-admin.
-  //   unset / "off" -> iframe OFF (default): show the plain "Get your API
-  //                    token" link. Safe default until Wylto provides a URL
-  //                    that is frameable AND works without third-party cookies.
-  //   any URL       -> embed that URL in the connect screen.
-  // Turning it on is env-only, no code redeploy: set WYLTO_EMBED_TOKEN_URL to
-  // the frameable URL on Cloud Run.
+  //   unset   -> embed the Wylto embedded token page (app.wylto.com/api-token).
+  //   "off"   -> kill-switch: show the plain "Get your API token" link instead,
+  //              env-only, no code redeploy — use if the iframe misbehaves.
+  //   any URL -> embed that URL instead.
+  // The page sends no X-Frame-Options / restrictive CSP, so it can be framed;
+  // the remaining check is that login works without third-party cookies
+  // (incognito), which must be verified on a real store.
   // eslint-disable-next-line no-undef
   const embedEnv = process.env.WYLTO_EMBED_TOKEN_URL;
   const embedTokenUrl =
-    embedEnv == null || embedEnv.trim().toLowerCase() === "off"
-      ? ""
-      : embedEnv;
+    embedEnv == null
+      ? "https://app.wylto.com/api-token"
+      : embedEnv.trim().toLowerCase() === "off"
+        ? ""
+        : embedEnv;
 
   return {
     shopDomain,
