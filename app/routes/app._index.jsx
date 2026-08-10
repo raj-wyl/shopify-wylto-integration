@@ -509,7 +509,7 @@ export default function WyltoConnection() {
                 e.target.style.boxShadow = "none";
               }}
             />
-            <s-stack direction="inline" gap="base" marginBlockStart="base">
+            <div style={{ marginTop: "16px" }}>
               <s-button
                 onClick={(e) => handleSubmit(e, "connect")}
                 disabled={isLoading || !wyltoToken}
@@ -518,7 +518,7 @@ export default function WyltoConnection() {
               >
                 Connect Store
               </s-button>
-            </s-stack>
+            </div>
           </s-box>
 
           {actionData?.error && (
