@@ -370,7 +370,11 @@ export default function WyltoConnection() {
     } else if (actionData?.error) {
       shopify.toast.show(actionData.error, { isError: true });
     }
-  }, [actionData, shopify, revalidator]);
+    // `revalidator` is intentionally excluded: calling revalidate() changes its
+    // identity, which would re-run this effect and re-show the toast in a loop.
+    // The effect should fire only when a new action result (actionData) arrives.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [actionData, shopify]);
 
   const handleSubmit = (e, type) => {
     e.preventDefault();
