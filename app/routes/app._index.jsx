@@ -553,14 +553,37 @@ export default function WyltoConnection() {
 
           {/* Get your token: log in to Wylto right here, copy the token, paste above */}
           {loaderData.embedTokenUrl ? (
-            <s-box marginBlockStart="base">
-              <s-text tone="subdued" style={{ display: "block", fontSize: "13px", marginBottom: "8px" }}>
-                Don&apos;t have your token yet? Log in to Wylto below, copy your API token, and paste it in the field above.
-              </s-text>
+            <div
+              style={{
+                marginTop: "28px",
+                paddingTop: "22px",
+                borderTop: "1px solid #e3e3e3",
+              }}
+            >
+              <div
+                style={{
+                  fontSize: "13.5px",
+                  fontWeight: 600,
+                  color: "#1a1a1a",
+                  marginBottom: "4px",
+                }}
+              >
+                Don&apos;t have your token yet?
+              </div>
+              <div
+                style={{
+                  fontSize: "13px",
+                  color: "#616161",
+                  lineHeight: 1.5,
+                  marginBottom: "16px",
+                }}
+              >
+                Log in to Wylto below, copy your API token, and paste it in the field above.
+              </div>
               <TokenFrame url={loaderData.embedTokenUrl} title="Wylto login" />
-            </s-box>
+            </div>
           ) : (
-            <div style={{ marginTop: "10px" }}>
+            <div style={{ marginTop: "12px" }}>
               <a
                 href="https://app.wylto.com/login"
                 target="_blank"
