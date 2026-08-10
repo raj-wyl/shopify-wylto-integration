@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { useFetcher, useLoaderData, useNavigate } from "react-router";
+import { useFetcher, useLoaderData, useRevalidator } from "react-router";
 import { useAppBridge } from "@shopify/app-bridge-react";
 import { boundary } from "@shopify/shopify-app-react-router/server";
 import { authenticate } from "../shopify.server";
@@ -344,8 +344,8 @@ function TokenFrame({ url, title = "Wylto login" }) {
 export default function WyltoConnection() {
   const loaderData = useLoaderData();
   const fetcher = useFetcher();
+  const revalidator = useRevalidator();
   const shopify = useAppBridge();
-  const navigate = useNavigate();
   const [wyltoToken, setWyltoToken] = useState("");
   const [actionType, setActionType] = useState("");
 
@@ -356,8 +356,8 @@ export default function WyltoConnection() {
   useEffect(() => {
     if (actionData?.success) {
       shopify.toast.show(actionData.message || "Settings saved successfully!");
-      // Reload page data after a successful connect or disconnect so the
-      // loader re-runs and the UI reflects the new connection state.
+      // Re-run the loader so loaderData reflects the new connection state on the
+      // next full load (revalidate updates loaderData; fetcher.load would not).
       const msg = actionData.message?.toLowerCase() || "";
       // Clear the token field on disconnect so the old token isn't left in the
       // input. ("disconnected" also contains "connected", so check it first.)
@@ -365,14 +365,12 @@ export default function WyltoConnection() {
         setWyltoToken("");
       }
       if (msg.includes("connected") || msg.includes("disconnected")) {
-        setTimeout(() => {
-          fetcher.load("/app");
-        }, 1000);
+        revalidator.revalidate();
       }
     } else if (actionData?.error) {
       shopify.toast.show(actionData.error, { isError: true });
     }
-  }, [actionData, shopify]);
+  }, [actionData, shopify, revalidator]);
 
   const handleSubmit = (e, type) => {
     e.preventDefault();
@@ -383,8 +381,18 @@ export default function WyltoConnection() {
     fetcher.submit(formData, { method: "POST" });
   };
 
-  // If already connected, show success message
-  if (loaderData.isConnected) {
+  // Connection state: trust the loader, but also flip immediately off the
+  // connect/disconnect action result so the view updates without waiting for a
+  // status re-check (which can lag right after connecting).
+  const actionMsg = (actionData?.message || "").toLowerCase();
+  const justDisconnected = actionData?.success && actionMsg.includes("disconnected");
+  const justConnected =
+    actionData?.success && actionMsg.includes("connected") && !actionMsg.includes("disconnected");
+  const isConnected = justDisconnected ? false : loaderData.isConnected || justConnected;
+  const connectionData = actionData?.connectionData ?? loaderData.connectionData;
+
+  // If connected, show the connected view
+  if (isConnected) {
   return (
       <s-page heading="Wylto">
         <s-section>
@@ -392,16 +400,16 @@ export default function WyltoConnection() {
         </s-section>
 
         <s-section heading="Connection">
-          {loaderData.connectionData && (
+          {connectionData && (
             <div style={{ display: "flex", flexWrap: "wrap", gap: "10px", marginBottom: "16px" }}>
               {[
-                ["Account", loaderData.connectionData.appName || "—"],
-                ["App ID", loaderData.connectionData.appId || "—"],
+                ["Account", connectionData.appName || "—"],
+                ["App ID", connectionData.appId || "—"],
                 [
                   "Token",
-                  loaderData.connectionData.tokenValid === undefined
+                  connectionData.tokenValid === undefined
                     ? "—"
-                    : loaderData.connectionData.tokenValid
+                    : connectionData.tokenValid
                       ? "Valid"
                       : "Invalid",
                 ],
