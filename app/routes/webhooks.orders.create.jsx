@@ -11,6 +11,13 @@ export const action = async ({ request }) => {
 
     console.log(`[Webhook] ${topic} received for shop: ${shop}`);
     console.log(`[Webhook] Order ID: ${payload.id}, Order Number: ${payload.name}`);
+    // Payment method — used to recognise COD orders. COD typically shows up as
+    // a gateway named "Cash on Delivery (COD)" with financial_status "pending".
+    console.log(
+      `[Webhook] Payment: gateway=${payload.gateway || "N/A"}, ` +
+        `payment_gateway_names=${JSON.stringify(payload.payment_gateway_names || [])}, ` +
+        `financial_status=${payload.financial_status || "N/A"}`,
+    );
 
     // Forward to Wylto backend
     const response = await fetch('https://server.wylto.com/api/shopify/webhook', {
