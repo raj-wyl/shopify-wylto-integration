@@ -390,7 +390,7 @@ export default function WyltoConnection() {
 
         <s-section heading="Connection">
           {loaderData.connectionData && (
-            <div style={{ display: "flex", flexWrap: "wrap", gap: "8px", marginBottom: "14px" }}>
+            <div style={{ display: "flex", flexWrap: "wrap", gap: "10px", marginBottom: "16px" }}>
               {[
                 ["Account", loaderData.connectionData.appName || "—"],
                 ["App ID", loaderData.connectionData.appId || "—"],
@@ -423,8 +423,8 @@ export default function WyltoConnection() {
             </div>
           )}
           <s-paragraph>
-            Your WhatsApp messages will be sent automatically for orders, fulfillments, and cart recovery.
-            Manage your templates and automation flows in your Wylto Dashboard.
+            Your WhatsApp messages are sent automatically for orders, fulfillments, and cart recovery.
+            Manage your message templates and automation flows from the Templates and Automations pages.
         </s-paragraph>
 
           {actionData?.error && (
@@ -440,20 +440,6 @@ export default function WyltoConnection() {
           )}
 
           <s-stack direction="inline" gap="base" marginBlockStart="base">
-            <a
-              href={
-                loaderData.connectionData?.appId
-                  ? `https://app.wylto.com/app/${loaderData.connectionData.appId}`
-                  : "https://app.wylto.com"
-              }
-              target="_blank"
-              rel="noopener noreferrer"
-              style={{ textDecoration: "none" }}
-            >
-              <s-button variant="primary">
-                Open Wylto Dashboard →
-              </s-button>
-            </a>
             <s-button
               onClick={(e) => handleSubmit(e, "disconnect")}
               disabled={isLoading}
