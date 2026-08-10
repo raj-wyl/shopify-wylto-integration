@@ -593,6 +593,20 @@ export default function WyltoConnection() {
                 Log in to Wylto below, copy your API token, and paste it in the field above.
               </div>
               <TokenFrame url={loaderData.embedTokenUrl} title="Wylto login" />
+              {/* Fallback: if the embedded frame is blank (e.g. third-party
+                  cookies blocked in incognito), the merchant can still open the
+                  token page in a new tab. */}
+              <div style={{ marginTop: "12px", fontSize: "13px", color: "#616161" }}>
+                Not seeing the login above?{" "}
+                <a
+                  href="https://app.wylto.com/login"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  style={{ color: "#1f7a52", fontWeight: 600, textDecoration: "none" }}
+                >
+                  Open it in a new tab →
+                </a>
+              </div>
             </div>
           ) : (
             <div style={{ marginTop: "12px" }}>
