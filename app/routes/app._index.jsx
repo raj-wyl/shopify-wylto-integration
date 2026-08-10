@@ -24,10 +24,28 @@ export const loader = async ({ request }) => {
     console.error("Failed to check connection status:", error);
   }
 
+  // URL of the Wylto login / API-token view to embed in-admin.
+  //   unset   -> embed the Wylto embedded token page (app.wylto.com/api-token).
+  //   "off"   -> kill-switch: show the plain "Get your API token" link instead,
+  //              env-only, no code redeploy — use if the iframe misbehaves.
+  //   any URL -> embed that URL instead.
+  // The page sends no X-Frame-Options / restrictive CSP, so it can be framed;
+  // the remaining check is that login works without third-party cookies
+  // (incognito), which must be verified on a real store.
+  // eslint-disable-next-line no-undef
+  const embedEnv = process.env.WYLTO_EMBED_TOKEN_URL;
+  const embedTokenUrl =
+    embedEnv == null
+      ? "https://app.wylto.com/api-token"
+      : embedEnv.trim().toLowerCase() === "off"
+        ? ""
+        : embedEnv;
+
   return {
     shopDomain,
     isConnected: connectionStatus.connected,
     connectionData: connectionStatus.data || null,
+    embedTokenUrl,
   };
 };
 
@@ -261,6 +279,66 @@ function FeatureGrid() {
   );
 }
 
+/**
+ * Embeds the Wylto login / API-token view inside the Shopify admin, so the
+ * merchant never leaves for an external tab (Shopify rule 2.2.2).
+ *
+ * Renders nothing until a URL is supplied (env WYLTO_EMBED_TOKEN_URL) — the
+ * caller falls back to a plain link in that case. The framed page must send
+ * headers that permit embedding (frame-ancestors including this app's origin)
+ * and work without third-party cookies (rule 1.1.1); both are handled on the
+ * Wylto side.
+ */
+function TokenFrame({ url, title = "Wylto login" }) {
+  const [loaded, setLoaded] = useState(false);
+
+  if (!url) return null;
+
+  return (
+    <div
+      style={{
+        position: "relative",
+        width: "100%",
+        border: "1px solid #e3e3e3",
+        borderRadius: "12px",
+        overflow: "hidden",
+        background: "#ffffff",
+        minHeight: "480px",
+      }}
+    >
+      {!loaded && (
+        <div
+          style={{
+            position: "absolute",
+            inset: 0,
+            display: "grid",
+            placeItems: "center",
+            color: "#8a8a8a",
+            fontSize: "13.5px",
+          }}
+        >
+          Loading…
+        </div>
+      )}
+      <iframe
+        src={url}
+        title={title}
+        onLoad={() => setLoaded(true)}
+        style={{
+          width: "100%",
+          height: "480px",
+          border: "none",
+          display: "block",
+        }}
+        // Allow the framed page to run its own scripts / forms / same-origin
+        // session, but nothing more than it needs.
+        sandbox="allow-scripts allow-forms allow-same-origin allow-popups"
+        referrerPolicy="no-referrer"
+      />
+    </div>
+  );
+}
+
 /* eslint-enable react/prop-types */
 
 export default function WyltoConnection() {
@@ -281,6 +359,11 @@ export default function WyltoConnection() {
       // Reload page data after a successful connect or disconnect so the
       // loader re-runs and the UI reflects the new connection state.
       const msg = actionData.message?.toLowerCase() || "";
+      // Clear the token field on disconnect so the old token isn't left in the
+      // input. ("disconnected" also contains "connected", so check it first.)
+      if (msg.includes("disconnected")) {
+        setWyltoToken("");
+      }
       if (msg.includes("connected") || msg.includes("disconnected")) {
         setTimeout(() => {
           fetcher.load("/app");
@@ -310,7 +393,7 @@ export default function WyltoConnection() {
 
         <s-section heading="Connection">
           {loaderData.connectionData && (
-            <div style={{ display: "flex", flexWrap: "wrap", gap: "8px", marginBottom: "14px" }}>
+            <div style={{ display: "flex", flexWrap: "wrap", gap: "10px", marginBottom: "16px" }}>
               {[
                 ["Account", loaderData.connectionData.appName || "—"],
                 ["App ID", loaderData.connectionData.appId || "—"],
@@ -343,8 +426,8 @@ export default function WyltoConnection() {
             </div>
           )}
           <s-paragraph>
-            Your WhatsApp messages will be sent automatically for orders, fulfillments, and cart recovery.
-            Manage your templates and automation flows in your Wylto Dashboard.
+            Your WhatsApp messages are sent automatically for orders, fulfillments, and cart recovery.
+            Manage your message templates and automation flows from the Templates and Automations pages.
         </s-paragraph>
 
           {actionData?.error && (
@@ -360,20 +443,6 @@ export default function WyltoConnection() {
           )}
 
           <s-stack direction="inline" gap="base" marginBlockStart="base">
-            <a
-              href={
-                loaderData.connectionData?.appId
-                  ? `https://app.wylto.com/app/${loaderData.connectionData.appId}`
-                  : "https://app.wylto.com"
-              }
-              target="_blank"
-              rel="noopener noreferrer"
-              style={{ textDecoration: "none" }}
-            >
-              <s-button variant="primary">
-                Open Wylto Dashboard →
-              </s-button>
-            </a>
             <s-button
               onClick={(e) => handleSubmit(e, "disconnect")}
               disabled={isLoading}
@@ -411,9 +480,6 @@ export default function WyltoConnection() {
             <s-label for="wyltoToken" style={{ display: "block", marginBottom: "8px" }}>
               Wylto App Token
             </s-label>
-            <s-text tone="subdued" style={{ display: "block", marginTop: "0", marginBottom: "16px" }}>
-              Find this in your Wylto Dashboard → Settings → API Settings.
-            </s-text>
             <input
               id="wyltoToken"
               type="password"
@@ -443,16 +509,16 @@ export default function WyltoConnection() {
                 e.target.style.boxShadow = "none";
               }}
             />
-            <div style={{ marginTop: "10px" }}>
-              <a
-                href="https://app.wylto.com/login"
-                target="_blank"
-                rel="noopener noreferrer"
-                style={{ fontSize: "13px", color: "#1f7a52", fontWeight: 600, textDecoration: "none" }}
+            <s-stack direction="inline" gap="base" marginBlockStart="base">
+              <s-button
+                onClick={(e) => handleSubmit(e, "connect")}
+                disabled={isLoading || !wyltoToken}
+                loading={isLoading && actionType === "connect"}
+                variant="primary"
               >
-                Get your API token →
-              </a>
-            </div>
+                Connect Store
+              </s-button>
+            </s-stack>
           </s-box>
 
           {actionData?.error && (
@@ -485,23 +551,26 @@ export default function WyltoConnection() {
               </s-box>
           )}
 
-          <s-stack direction="inline" gap="base" marginBlockStart="base">
-            <s-button
-              onClick={(e) => handleSubmit(e, "test")}
-              disabled={isLoading}
-              loading={isLoading && actionType === "test"}
-            >
-              Check Status
-            </s-button>
-            <s-button
-              onClick={(e) => handleSubmit(e, "connect")}
-              disabled={isLoading || !wyltoToken}
-              loading={isLoading && actionType === "connect"}
-              variant="primary"
-            >
-              Connect Store
-            </s-button>
-          </s-stack>
+          {/* Get your token: log in to Wylto right here, copy the token, paste above */}
+          {loaderData.embedTokenUrl ? (
+            <s-box marginBlockStart="base">
+              <s-text tone="subdued" style={{ display: "block", fontSize: "13px", marginBottom: "8px" }}>
+                Don&apos;t have your token yet? Log in to Wylto below, copy your API token, and paste it in the field above.
+              </s-text>
+              <TokenFrame url={loaderData.embedTokenUrl} title="Wylto login" />
+            </s-box>
+          ) : (
+            <div style={{ marginTop: "10px" }}>
+              <a
+                href="https://app.wylto.com/login"
+                target="_blank"
+                rel="noopener noreferrer"
+                style={{ fontSize: "13px", color: "#1f7a52", fontWeight: 600, textDecoration: "none" }}
+              >
+                Get your API token →
+              </a>
+            </div>
+          )}
             </s-stack>
       </s-section>
 
