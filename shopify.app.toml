@@ -66,7 +66,7 @@ api_version = "2026-01"
   uri = "/webhooks/shop/redact"
 
 [access_scopes]
-scopes = "read_checkouts,read_customers,read_fulfillments,read_orders,read_products"
+scopes = "read_checkouts,read_customers,read_fulfillments,read_orders,write_orders,read_products"
 
 [auth]
 redirect_urls = [
